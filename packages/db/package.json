@@ -17,7 +17,7 @@
     "test:rls": "vitest run --testPathPattern=rls"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
+    "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.34.0",
     "pg": "^8.12.0"
   },
