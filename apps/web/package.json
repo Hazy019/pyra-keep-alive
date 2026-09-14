@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.15.0",
-    "@neondatabase/serverless": "^0.10.4",
+    "@neondatabase/serverless": "^1.1.0",
     "@pyra/db": "workspace:*",
     "@pyra/shared": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.23",
