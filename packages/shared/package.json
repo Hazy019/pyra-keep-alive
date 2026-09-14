@@ -1,0 +1,25 @@
+{
+  "name": "@pyra/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ssrf": "./src/ssrf.ts",
+    "./logger": "./src/logger.ts",
+    "./audit": "./src/audit.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "pino": "^9.4.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "vitest": "^2.1.1"
+  }
+}

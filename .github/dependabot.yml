@@ -1,0 +1,58 @@
+version: 2
+updates:
+  # ─── Root devDependencies ──────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, security]
+    groups:
+      dev-tools:
+        patterns: [eslint*, prettier*, typescript*, "@typescript-eslint/*", husky, lint-staged]
+
+  # ─── Web app ───────────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, web]
+    groups:
+      clerk:
+        patterns: ["@clerk/*"]
+      next:
+        patterns: [next, react, react-dom, "@types/react*"]
+      upstash:
+        patterns: ["@upstash/*"]
+
+  # ─── Worker ────────────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /apps/worker
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, worker]
+
+  # ─── Shared package ────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/shared
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, shared]
+
+  # ─── DB package ────────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/db
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, db]
+
+  # ─── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies, ci]
