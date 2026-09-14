@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.15.0",
+    "@clerk/nextjs": "^7.9.2",
     "@neondatabase/serverless": "^0.10.4",
     "@pyra/db": "workspace:*",
     "@pyra/shared": "workspace:*",
