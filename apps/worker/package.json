@@ -16,7 +16,7 @@
     "@pyra/db": "workspace:*",
     "@pyra/shared": "workspace:*",
     "bullmq": "^5.13.2",
-    "drizzle-orm": "^0.34.0",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^4.28.1",
     "ioredis": "^5.4.1",
     "pg": "^8.12.0",
