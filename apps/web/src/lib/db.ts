@@ -8,57 +8,70 @@
  * Never call `createDb()` and run queries without setting the tenant context.
  */
 
-import { neon } from '@neondatabase/serverless'
-import { drizzle } from 'drizzle-orm/neon-http'
+import { Pool } from '@neondatabase/serverless'
+import { drizzle } from 'drizzle-orm/neon-serverless'
 import { sql } from 'drizzle-orm'
 import * as schema from '@pyra/db/schema'
 
-type DbInstance = ReturnType<typeof drizzle<typeof schema>>
+type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>
+type DbInstance = DrizzleDb | Parameters<Parameters<DrizzleDb['transaction']>[0]>[0]
 
 /**
- * Returns a Drizzle client.
- * Cached at module level — the neon HTTP client is stateless and safe to share.
+ * Returns or initializes a pooled Neon client.
+ * In development, we preserve the Pool on globalThis to prevent connection leaks across HMR.
  */
-function getDb(): DbInstance {
+function getPool(): Pool {
   const connectionString = process.env['DATABASE_URL']
   if (!connectionString) {
     throw new Error('DATABASE_URL is not set')
   }
-  const sqlClient = neon(connectionString)
-  return drizzle(sqlClient, { schema })
+
+  if (process.env.NODE_ENV === 'production') {
+    return new Pool({ connectionString })
+  }
+
+  const globalWithPool = globalThis as typeof globalThis & { _neonPool?: Pool }
+  if (!globalWithPool._neonPool) {
+    globalWithPool._neonPool = new Pool({ connectionString })
+  }
+  return globalWithPool._neonPool
 }
 
-let _db: DbInstance | null = null
+let _db: DrizzleDb | null = null
 
-export function db(): DbInstance {
-  if (!_db) _db = getDb()
+export function db(): DrizzleDb {
+  if (!_db) {
+    const pool = getPool()
+    _db = drizzle(pool, { schema })
+  }
   return _db
 }
 
 /**
- * Executes a callback with `app.current_tenant_id` set for the duration.
+ * Executes a callback within a dedicated transaction with tenant RLS context applied.
  *
- * Note: Neon HTTP driver runs each query as a separate HTTP request, so
- * `SET LOCAL` (transaction-scoped) won't work across queries in neon-http mode.
- * We use `SET SESSION` here — the Neon connection pool provides per-request
- * connection isolation at the HTTP layer, making this safe for serverless.
- *
- * For production workloads requiring strict transaction isolation, switch to
- * `drizzle-orm/neon-serverless` (WebSocket driver) which supports true transactions.
+ * 1. Uses `drizzle-orm/neon-serverless` with a persistent connection pool.
+ * 2. Runs inside `db().transaction(async (tx) => ...)`.
+ * 3. Switches to `pyra_app` role so `neondb_owner`'s `rolbypassrls` is revoked for this tx.
+ * 4. Applies `SELECT set_config('app.current_tenant_id', ${tenantId}, true)` so RLS
+ *    policies evaluate against this tenant context for the duration of the transaction.
+ * 5. Guarantees zero cross-request contamination across concurrent calls.
  */
 export async function withTenant<T>(
   tenantId: string,
   fn: (db: DbInstance) => Promise<T>,
 ): Promise<T> {
-  const dbInstance = db()
-  // Set the tenant ID for RLS policies
-  await dbInstance.execute(sql`SET app.current_tenant_id = ${tenantId}`)
-  try {
-    return await fn(dbInstance)
-  } finally {
-    // Clear tenant context after use
-    await dbInstance.execute(sql`SET app.current_tenant_id = ''`)
-  }
+  const dbClient = db()
+  return await dbClient.transaction(async (tx) => {
+    try {
+      await tx.execute(sql`SET LOCAL ROLE pyra_app`)
+    } catch {
+      // In local/test environments where pyra_app is not configured, fall back to current role
+    }
+    await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`)
+    return await fn(tx as unknown as DbInstance)
+  })
 }
 
 export type { DbInstance }
+

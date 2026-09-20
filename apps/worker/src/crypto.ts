@@ -14,9 +14,21 @@ const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
 const AUTH_TAG_LENGTH = 16
 
+// 32-byte deterministic fallback key for local development only
+const DEV_FALLBACK_KEY_B64 = 'k7Vb+O6gB1E9YvL+X0u3p2W8y5N7r4T1c9Q6M2Z8v5I='
+
 function getMasterKey(): Buffer {
-  const keyB64 = process.env['ENCRYPTION_KEY']
-  if (!keyB64) throw new Error('ENCRYPTION_KEY environment variable is not set')
+  let keyB64 = process.env['ENCRYPTION_KEY']?.trim()
+  if (!keyB64) {
+    if (process.env['NODE_ENV'] !== 'production') {
+      console.warn(
+        '[crypto] WARNING: ENCRYPTION_KEY is not set in environment. Using fallback development key.',
+      )
+      keyB64 = DEV_FALLBACK_KEY_B64
+    } else {
+      throw new Error('ENCRYPTION_KEY environment variable is not set')
+    }
+  }
   const key = Buffer.from(keyB64, 'base64')
   if (key.length !== 32) {
     throw new Error(`ENCRYPTION_KEY must be 32 bytes (256 bits); got ${key.length} bytes`)

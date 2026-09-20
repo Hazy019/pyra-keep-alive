@@ -71,7 +71,7 @@ export default function Testimonials() {
               flexDirection: 'column',
               justifyContent: 'space-between',
               height: '100%',
-              padding: '28px 24px',
+              padding: '24px',
             }}
           >
             <blockquote

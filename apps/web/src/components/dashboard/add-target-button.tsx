@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
+import { getCsrfToken } from '@/lib/csrf-client'
 
 /**
  * Add Target Button + inline modal.
@@ -26,17 +27,11 @@ export default function AddTargetButton() {
     setError(null)
 
     try {
-      // Get CSRF token from cookie (double-submit pattern)
-      const csrfToken = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('pyra-csrf='))
-        ?.split('=')[1] ?? ''
-
       const response = await fetch('/api/targets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrfToken,
+          'x-csrf-token': getCsrfToken(),
         },
         body: JSON.stringify({
           url,

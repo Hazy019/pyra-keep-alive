@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { getTarget, getRecentPingLogs } from '@/lib/repositories/target.repo'
-import { ArrowLeft, CheckCircle2, Shield, Clock, ExternalLink } from 'lucide-react'
+import type { PingLog } from '@pyra/db/schema'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Target Details' }
 
@@ -17,7 +17,7 @@ export default async function TargetDetailPage({
   const ctx = await requireRole('viewer')
 
   let target = null
-  let pingLogs: any[] = []
+  let pingLogs: PingLog[] = []
 
   if (process.env['DATABASE_URL']) {
     try {

@@ -43,41 +43,49 @@ export async function POST(_req: Request, ctx: RouteContext) {
       const parsed = new URL(target.url)
       const hostname = parsed.hostname
 
-      // Attempt DNS TXT verification first
+      // Attempt DNS TXT verification first (support both _pyra-challenge and _pyra-verify)
       let verified = false
       let method = ''
 
-      try {
-        const txtRecords = await dns.resolveTxt(`_pyra-verify.${hostname}`)
-        const flat = txtRecords.flat()
-        if (flat.some((r) => r === `pyra-verify=${token}`)) {
-          verified = true
-          method = 'dns_txt'
-        }
-      } catch {
-        // DNS lookup failed — try well-known file
-      }
-
-      // If DNS failed, try well-known file (with SSRF protection)
-      if (!verified) {
+      const dnsCandidates = [`_pyra-challenge.${hostname}`, `_pyra-verify.${hostname}`]
+      for (const hostCandidate of dnsCandidates) {
         try {
-          const wellKnownUrl = `${parsed.protocol}//${hostname}/.well-known/pyra-verify`
-          await validateTargetUrl(wellKnownUrl) // SSRF check
-
-          const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), 5000)
-          const response = await fetch(wellKnownUrl, { signal: controller.signal })
-          clearTimeout(timeout)
-
-          if (response.ok) {
-            const text = (await response.text()).trim()
-            if (text === token || text === `pyra-verify=${token}`) {
-              verified = true
-              method = 'well_known'
-            }
+          const txtRecords = await dns.resolveTxt(hostCandidate)
+          const flat = txtRecords.flat()
+          if (flat.some((r) => r === `pyra-verify=${token}` || r === token)) {
+            verified = true
+            method = 'dns_txt'
+            break
           }
         } catch {
-          // Well-known check failed
+          // Candidate failed, try next
+        }
+      }
+
+      // If DNS failed, try well-known file (with SSRF protection, supporting both routes)
+      if (!verified) {
+        const wellKnownPaths = ['/.well-known/pyra-challenge', '/.well-known/pyra-verify']
+        for (const path of wellKnownPaths) {
+          try {
+            const wellKnownUrl = `${parsed.protocol}//${hostname}${path}`
+            await validateTargetUrl(wellKnownUrl) // SSRF check
+
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 5000)
+            const response = await fetch(wellKnownUrl, { signal: controller.signal })
+            clearTimeout(timeout)
+
+            if (response.ok) {
+              const text = (await response.text()).trim()
+              if (text === token || text === `pyra-verify=${token}`) {
+                verified = true
+                method = 'well_known'
+                break
+              }
+            }
+          } catch {
+            // Well-known candidate failed
+          }
         }
       }
 

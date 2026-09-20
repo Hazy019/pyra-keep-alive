@@ -13,20 +13,20 @@
  */
 
 import { Worker, Queue } from 'bullmq'
-import type { ConnectionOptions, Job } from 'bullmq'
+import type { Job } from 'bullmq'
 import { sql } from 'drizzle-orm'
 import type { Db } from '@pyra/db'
 import { validateTargetUrl, SsrfError } from '@pyra/shared/ssrf'
-import { jobLogger } from '@pyra/shared/logger'
-import { AUDIT_ACTIONS } from '@pyra/shared/types'
+import { jobLogger, logger } from '@pyra/shared/logger'
 import type { PingJobPayload } from '@pyra/shared/types'
+import type Redis from 'ioredis'
 import { decryptAuthHeader } from './crypto.js'
 import type { NotificationPayload } from './notifications.js'
 
 const PING_TIMEOUT_MS = Number(process.env['PING_TIMEOUT_MS'] ?? 10_000)
 const FAILURE_ALERT_THRESHOLD = Number(process.env['FAILURE_ALERT_THRESHOLD'] ?? 3)
 
-export function createPingWorker(db: Db, redis: any) {
+export function createPingWorker(db: Db, redis: Redis) {
   const notificationQueue = new Queue<NotificationPayload>('notifications', { connection: redis })
 
   const worker = new Worker<PingJobPayload>(
@@ -147,9 +147,8 @@ export function createPingWorker(db: Db, redis: any) {
   worker.on('failed', (job, err) => {
     const log = job
       ? jobLogger(job.id ?? 'unknown', job.data.targetId, job.data.tenantId)
-      : { error: console.error }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(log as any).error?.({ event: 'ping.job_failed', err, attempts: job?.attemptsMade }, 'Job failed after retries — in DLQ')
+      : logger
+    log.error({ event: 'ping.job_failed', err, attempts: job?.attemptsMade }, 'Job failed after retries — in DLQ')
   })
 
   return worker

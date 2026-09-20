@@ -3,6 +3,7 @@ name: Deploy Staging
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: deploy-staging
@@ -18,6 +19,7 @@ jobs:
     name: Deploy Web (Staging)
     runs-on: ubuntu-latest
     environment: staging
+    if: ${{ secrets.VERCEL_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -36,12 +38,22 @@ jobs:
 
       - name: Deploy to Vercel (staging)
         run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "::error::VERCEL_TOKEN secret is not configured in GitHub repository secrets."
+            exit 1
+          fi
+
+          SCOPE_ARG=""
+          if [ -n "${{ secrets.VERCEL_SCOPE }}" ]; then
+            SCOPE_ARG="--scope ${{ secrets.VERCEL_SCOPE }}"
+          fi
+
           pnpm --filter @pyra/web exec vercel deploy \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_SCOPE }} \
-            --env NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.STAGING_CLERK_PUBLISHABLE_KEY }} \
-            --env NEXT_PUBLIC_APP_URL=${{ vars.STAGING_APP_URL }} \
-            --env NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ secrets.STAGING_TURNSTILE_SITE_KEY }}
+            --token "${{ secrets.VERCEL_TOKEN }}" \
+            $SCOPE_ARG \
+            --env NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.STAGING_CLERK_PUBLISHABLE_KEY }}" \
+            --env NEXT_PUBLIC_APP_URL="${{ vars.STAGING_APP_URL }}" \
+            --env NEXT_PUBLIC_TURNSTILE_SITE_KEY="${{ secrets.STAGING_TURNSTILE_SITE_KEY }}"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -51,6 +63,7 @@ jobs:
     name: Deploy Worker (Staging)
     runs-on: ubuntu-latest
     environment: staging
+    if: ${{ secrets.FLY_API_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +72,10 @@ jobs:
 
       - name: Deploy worker to Fly.io staging
         run: |
+          if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "::error::FLY_API_TOKEN secret is not configured in GitHub repository secrets."
+            exit 1
+          fi
           flyctl deploy \
             --app pyra-worker-staging \
             --config apps/worker/fly.toml \
@@ -73,6 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-web-staging, deploy-worker-staging]
     environment: production  # Requires manual approval in GitHub Environments UI
+    if: ${{ secrets.VERCEL_TOKEN_PROD != '' || secrets.FLY_API_TOKEN_PROD != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +98,10 @@ jobs:
 
       - name: Deploy worker to Fly.io production
         run: |
+          if [ -z "${{ secrets.FLY_API_TOKEN_PROD }}" ]; then
+            echo "::error::FLY_API_TOKEN_PROD secret is not configured in GitHub repository secrets."
+            exit 1
+          fi
           flyctl deploy \
             --app pyra-worker-prod \
             --config apps/worker/fly.toml \
@@ -90,9 +112,19 @@ jobs:
 
       - name: Promote Vercel deployment to production
         run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN_PROD }}" ]; then
+            echo "::error::VERCEL_TOKEN_PROD secret is not configured in GitHub repository secrets."
+            exit 1
+          fi
+
+          SCOPE_ARG=""
+          if [ -n "${{ secrets.VERCEL_SCOPE_PROD }}" ]; then
+            SCOPE_ARG="--scope ${{ secrets.VERCEL_SCOPE_PROD }}"
+          fi
+
           pnpm --filter @pyra/web exec vercel promote \
-            --token ${{ secrets.VERCEL_TOKEN_PROD }} \
-            --scope ${{ secrets.VERCEL_SCOPE_PROD }}
+            --token "${{ secrets.VERCEL_TOKEN_PROD }}" \
+            $SCOPE_ARG
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_PROD }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROD }}

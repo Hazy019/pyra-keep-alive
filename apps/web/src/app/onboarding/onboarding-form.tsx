@@ -1,11 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ArrowRight, Building2 } from 'lucide-react'
 
 export default function OnboardingForm() {
-  const router = useRouter()
   const [workspaceName, setWorkspaceName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

@@ -35,15 +35,18 @@ export default function TrustedBy() {
         padding: '0 24px 72px',
       }}
     >
-      {/* ─── Metric counters with GSAP count-up ─────────────────────────────── */}
+      {/* ─── Metric counters with GSAP count-up (bridging hero boundary) ─── */}
       <div
-        className="card"
+        className="card card-overlap"
         style={{
           background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
           borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-resting)',
-          padding: '32px 28px',
+          boxShadow: 'var(--shadow-overlap)',
+          padding: '28px 24px',
+          marginTop: -36,
+          position: 'relative',
+          zIndex: 10,
           marginBottom: 40,
         }}
       >

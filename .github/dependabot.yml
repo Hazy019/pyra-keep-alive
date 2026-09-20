@@ -4,55 +4,82 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    open-pull-requests-limit: 2
     labels: [dependencies, security]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
-      dev-tools:
-        patterns: [eslint*, prettier*, typescript*, "@typescript-eslint/*", husky, lint-staged]
+      dev-dependencies:
+        patterns: ["*"]
 
   # ─── Web app ───────────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /apps/web
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    open-pull-requests-limit: 2
     labels: [dependencies, web]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
-      clerk:
-        patterns: ["@clerk/*"]
-      next:
-        patterns: [next, react, react-dom, "@types/react*"]
-      upstash:
-        patterns: ["@upstash/*"]
+      web-dependencies:
+        patterns: ["*"]
 
   # ─── Worker ────────────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /apps/worker
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    open-pull-requests-limit: 2
     labels: [dependencies, worker]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      worker-dependencies:
+        patterns: ["*"]
 
   # ─── Shared package ────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /packages/shared
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    open-pull-requests-limit: 2
     labels: [dependencies, shared]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      shared-dependencies:
+        patterns: ["*"]
 
   # ─── DB package ────────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /packages/db
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    open-pull-requests-limit: 2
     labels: [dependencies, db]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      db-dependencies:
+        patterns: ["*"]
 
   # ─── GitHub Actions ────────────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 2
     labels: [dependencies, ci]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      actions:
+        patterns: ["*"]

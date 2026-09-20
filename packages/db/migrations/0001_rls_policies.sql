@@ -38,32 +38,32 @@ ALTER TABLE users           ENABLE ROW LEVEL SECURITY;
 
 -- targets: read + write scoped to current tenant
 CREATE POLICY tenant_isolation_targets ON targets
-  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
 
 -- ping_logs: read + write scoped to current tenant
 CREATE POLICY tenant_isolation_ping_logs ON ping_logs
-  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
 
 -- audit_log: read + write scoped to current tenant
 CREATE POLICY tenant_isolation_audit_log ON audit_log
-  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
 
 -- memberships: a user can see memberships where the tenant_id matches current tenant
 CREATE POLICY tenant_isolation_memberships ON memberships
-  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
 
 -- tenants: a user can see a tenant row if they have a membership in it
 -- (avoids an extra RLS variable; the subquery is safe under our connection pool model)
 CREATE POLICY tenant_isolation_tenants ON tenants
   USING (
-    id = current_setting('app.current_tenant_id', true)::uuid
+    id = nullif(current_setting('app.current_tenant_id', true), '')::uuid
   );
 
 -- users: users can see only their own row
 -- (current_user_id is set analogously to current_tenant_id by the API layer)
 CREATE POLICY user_isolation_users ON users
   USING (
-    id = current_setting('app.current_user_id', true)::uuid
+    id = nullif(current_setting('app.current_user_id', true), '')::uuid
   );
 
 -- ─── Indexes ─────────────────────────────────────────────────────────────────

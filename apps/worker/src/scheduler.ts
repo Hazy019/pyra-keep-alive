@@ -9,18 +9,25 @@
 
 import { sql } from 'drizzle-orm'
 import { Queue } from 'bullmq'
-import type { ConnectionOptions } from 'bullmq'
 import type { Db } from '@pyra/db'
-import { jobLogger } from '@pyra/shared/logger'
-import { logger } from '@pyra/shared/logger'
+import { jobLogger, logger } from '@pyra/shared/logger'
 import type { PingJobPayload } from '@pyra/shared/types'
+import type Redis from 'ioredis'
+
+interface DueTargetRow {
+  id: string
+  tenant_id: string
+  url: string
+  auth_header_encrypted: string | null
+  consecutive_failures: number
+}
 
 const SCHEDULER_INTERVAL_MS = Number(process.env['SCHEDULER_INTERVAL_MS'] ?? 60_000)
 const BATCH_SIZE = Number(process.env['SCHEDULER_BATCH_SIZE'] ?? 500)
 /** Max jitter in milliseconds added to job delay to prevent thundering herd */
 const MAX_JITTER_MS = 30_000
 
-export function createScheduler(db: Db, redis: any) {
+export function createScheduler(db: Db, redis: Redis) {
   const queue = new Queue<PingJobPayload>('pings', { connection: redis })
 
   async function sweep() {
@@ -49,8 +56,7 @@ export function createScheduler(db: Db, redis: any) {
 
       const result = await db.execute(dueSql)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rows = result.rows as any[]
+      const rows = result.rows as unknown as DueTargetRow[]
 
       if (rows.length === 0) {
         logger.debug({ event: 'scheduler.sweep.empty' }, 'No due targets')
@@ -59,21 +65,21 @@ export function createScheduler(db: Db, redis: any) {
 
       const jobs = rows.map((row) => {
         const jitterMs = Math.floor(Math.random() * MAX_JITTER_MS)
-        const log = jobLogger(row.id as string, row.id as string, row.tenant_id as string)
+        const log = jobLogger(row.id, row.id, row.tenant_id)
         log.debug({ event: 'scheduler.enqueue', jitterMs }, 'Enqueuing ping job')
 
         return {
           name: 'ping',
           data: {
-            targetId: row.id as string,
-            tenantId: row.tenant_id as string,
-            url: row.url as string,
-            authHeaderEncrypted: (row.auth_header_encrypted as string | null),
-            consecutiveFailures: (row.consecutive_failures as number),
+            targetId: row.id,
+            tenantId: row.tenant_id,
+            url: row.url,
+            authHeaderEncrypted: row.auth_header_encrypted,
+            consecutiveFailures: row.consecutive_failures,
           } satisfies PingJobPayload,
           opts: {
             // Use targetId as job ID prefix for deduplication within the window
-            jobId: `ping:${row.id as string}:${Date.now()}`,
+            jobId: `ping:${row.id}:${Date.now()}`,
             delay: jitterMs,
             attempts: 3,
             backoff: { type: 'exponential', delay: 1000 },

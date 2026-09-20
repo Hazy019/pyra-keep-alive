@@ -2,28 +2,51 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react'
+import { CheckCircle2, Loader2, ArrowRight, AlertCircle } from 'lucide-react'
+import { getCsrfToken } from '@/lib/csrf-client'
 
 export default function VerifyButton({ targetId }: { targetId: string }) {
   const router = useRouter()
   const [checking, setChecking] = useState(false)
   const [verified, setVerified] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   async function handleCheck() {
     setChecking(true)
     setMessage(null)
+    setErrorMessage(null)
 
-    // Simulate domain check / verification call
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/targets/${targetId}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': getCsrfToken(),
+        },
+      })
+      const data = (await res.json()) as { message?: string; error?: string; method?: string }
+
+      if (res.ok) {
+        setVerified(true)
+        setMessage(
+          `Domain ownership confirmed via ${data.method === 'dns_txt' ? 'DNS TXT record' : 'well-known HTTP file'}! High-frequency ping cadences are now unlocked.`,
+        )
+        setTimeout(() => {
+          router.push(`/dashboard/targets/${targetId}`)
+          router.refresh()
+        }, 1500)
+      } else {
+        setErrorMessage(
+          data.error ??
+            'Verification check failed. Ensure the DNS TXT record or well-known route is accessible and has propagated.',
+        )
+      }
+    } catch {
+      setErrorMessage('Network connection error while contacting verification service. Please try again.')
+    } finally {
       setChecking(false)
-      setVerified(true)
-      setMessage('Domain verified successfully! High-frequency intervals are now unlocked.')
-      setTimeout(() => {
-        router.push(`/dashboard/targets/${targetId}`)
-        router.refresh()
-      }, 1500)
-    }, 1200)
+    }
   }
 
   return (
@@ -42,9 +65,33 @@ export default function VerifyButton({ targetId }: { targetId: string }) {
             alignItems: 'center',
             gap: 8,
           }}
+          role="status"
+          id="verify-success-banner"
         >
           <CheckCircle2 size={16} aria-hidden="true" />
           {message}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div
+          style={{
+            background: 'rgba(178, 58, 46, 0.08)',
+            border: '1px solid rgba(178, 58, 46, 0.25)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 16px',
+            fontSize: 14,
+            color: 'var(--color-danger, #b23a2e)',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+          role="alert"
+          id="verify-error-banner"
+        >
+          <AlertCircle size={16} aria-hidden="true" />
+          {errorMessage}
         </div>
       )}
 

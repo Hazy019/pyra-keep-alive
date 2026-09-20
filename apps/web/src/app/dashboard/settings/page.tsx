@@ -3,7 +3,7 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { tenants } from '@pyra/db/schema'
 import { eq } from 'drizzle-orm'
-import { ShieldCheck, Bell, CreditCard, Sparkles } from 'lucide-react'
+import { ShieldCheck, Sparkles } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Workspace Settings' }
 

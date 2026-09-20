@@ -10,7 +10,7 @@ export default function CtaBanner() {
       style={{
         maxWidth: 1120,
         margin: '0 auto',
-        padding: '24px 24px 88px',
+        padding: '24px 24px 80px',
       }}
       aria-label="Call to action"
     >

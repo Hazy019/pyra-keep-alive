@@ -1,12 +1,38 @@
-import { SignUp } from '@clerk/nextjs'
+import { SignUp, ClerkLoaded, ClerkLoading, SignedIn, SignedOut } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { KeyRound, ArrowRight, ExternalLink } from 'lucide-react'
+import { KeyRound, ArrowRight, ExternalLink, Loader2 } from 'lucide-react'
+import SignedInRedirect from '@/components/auth/signed-in-redirect'
 
 export const metadata = {
   title: 'Sign Up — Pyra',
 }
 
-export default function SignUpPage() {
+export default async function SignUpPage(props: {
+  searchParams?: Promise<{ redirect_url?: string }>
+}) {
+  const searchParams = props.searchParams ? await props.searchParams : undefined
+  const { userId } = await auth()
+
+  if (userId) {
+    const rawRedirect = searchParams?.redirect_url
+    let destination = '/onboarding'
+    if (rawRedirect) {
+      if (rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) {
+        destination = rawRedirect
+      } else {
+        try {
+          const parsed = new URL(rawRedirect, 'http://localhost:3000')
+          destination = parsed.pathname + parsed.search + parsed.hash
+        } catch {
+          destination = '/onboarding'
+        }
+      }
+    }
+    redirect(destination)
+  }
+
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
   const isConfigured = Boolean(
     publishableKey &&
@@ -47,35 +73,68 @@ export default function SignUpPage() {
       </div>
 
       {isConfigured ? (
-        <SignUp
-          fallbackRedirectUrl="/onboarding"
-          signInUrl="/sign-in"
-          appearance={{
-            variables: {
-              colorPrimary: '#E8622C',
-              colorBackground: '#FFFFFF',
-              colorText: '#211D1A',
-              colorTextSecondary: '#6B6460',
-              colorInputBackground: '#FFFFFF',
-              colorInputText: '#211D1A',
-              borderRadius: '10px',
-              fontFamily: 'var(--font-body)',
-            },
-            elements: {
-              card: {
-                border: '1px solid #E7DFD6',
-                boxShadow: '0 8px 24px rgba(33, 29, 26, 0.10)',
+        <>
+          <ClerkLoading>
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 400,
+                minHeight: 460,
                 borderRadius: '16px',
-              },
-              formButtonPrimary: {
-                backgroundColor: '#E8622C',
-                '&:hover': {
-                  backgroundColor: '#DF551F',
-                },
-              },
-            },
-          }}
-        />
+                border: '1px solid var(--color-border, #E7DFD6)',
+                background: 'var(--color-surface, #FFFFFF)',
+                boxShadow: '0 8px 24px rgba(33, 29, 26, 0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 14,
+                padding: '32px 24px',
+              }}
+            >
+              <Loader2 size={28} className="spin" style={{ color: 'var(--color-accent, #E8622C)' }} />
+              <p style={{ fontSize: 14, color: 'var(--color-text-muted, #6B6460)' }}>
+                Connecting to authentication provider...
+              </p>
+            </div>
+          </ClerkLoading>
+          <ClerkLoaded>
+            <SignedIn>
+              <SignedInRedirect />
+            </SignedIn>
+            <SignedOut>
+              <SignUp
+                fallbackRedirectUrl="/onboarding"
+                signInUrl="/sign-in"
+                appearance={{
+                  variables: {
+                    colorPrimary: '#E8622C',
+                    colorBackground: '#FFFFFF',
+                    colorText: '#211D1A',
+                    colorTextSecondary: '#6B6460',
+                    colorInputBackground: '#FFFFFF',
+                    colorInputText: '#211D1A',
+                    borderRadius: '10px',
+                    fontFamily: 'var(--font-body)',
+                  },
+                  elements: {
+                    card: {
+                      border: '1px solid #E7DFD6',
+                      boxShadow: '0 8px 24px rgba(33, 29, 26, 0.10)',
+                      borderRadius: '16px',
+                    },
+                    formButtonPrimary: {
+                      backgroundColor: '#E8622C',
+                      '&:hover': {
+                        backgroundColor: '#DF551F',
+                      },
+                    },
+                  },
+                }}
+              />
+            </SignedOut>
+          </ClerkLoaded>
+        </>
       ) : (
         <div
           className="card"

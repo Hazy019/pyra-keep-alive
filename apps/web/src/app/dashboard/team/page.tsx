@@ -3,7 +3,7 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { memberships, users } from '@pyra/db/schema'
 import { eq } from 'drizzle-orm'
-import { Users, UserPlus, Shield } from 'lucide-react'
+import { UserPlus, Shield } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Team Management' }
 

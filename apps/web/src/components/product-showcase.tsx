@@ -1,6 +1,6 @@
 'use client'
 
-import { ShieldCheck, CheckCircle2, Zap, ArrowUpRight, Lock } from 'lucide-react'
+import { ShieldCheck, CheckCircle2, Zap, Lock } from 'lucide-react'
 
 export default function ProductShowcase() {
   return (
@@ -9,7 +9,7 @@ export default function ProductShowcase() {
       style={{
         maxWidth: 1120,
         margin: '0 auto',
-        padding: '32px 24px 88px',
+        padding: '24px 24px 80px',
         position: 'relative',
       }}
       aria-label="Product preview"

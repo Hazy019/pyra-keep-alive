@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { getTarget } from '@/lib/repositories/target.repo'
-import { ArrowLeft, Globe, FileCode, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Globe, FileCode } from 'lucide-react'
 import VerifyButton from './verify-button'
 
 export const metadata: Metadata = { title: 'Verify Domain Ownership' }

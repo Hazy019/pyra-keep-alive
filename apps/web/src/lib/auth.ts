@@ -31,19 +31,42 @@ export async function getSessionContext(): Promise<SessionContext> {
   }
 
   const clerkUserId = userId
-  let tenantId = sessionClaims?.['tenantId'] as string | undefined
+  const claimedTenantId = sessionClaims?.['tenantId'] as string | undefined
   let internalUserId = sessionClaims?.['internalUserId'] as string | undefined
   let role = (sessionClaims?.['role'] as Role | undefined) ?? 'viewer'
+  let tenantId: string | undefined
 
-  // If JWT session claims do not contain tenant metadata, fall back to Postgres
-  if (!tenantId || !internalUserId) {
-    if (process.env['DATABASE_URL']) {
-      try {
-        const { db } = await import('@/lib/db')
-        const schema = await import('@pyra/db/schema')
-        const { eq } = await import('drizzle-orm')
+  if (process.env['DATABASE_URL']) {
+    try {
+      const { db } = await import('@/lib/db')
+      const schema = await import('@pyra/db/schema')
+      const { eq, and } = await import('drizzle-orm')
 
-        const dbClient = db()
+      const dbClient = db()
+
+      // If claims provide tenantId, verify it matches an actual membership row (guards against forged/stale JWT claims)
+      if (claimedTenantId && internalUserId) {
+        const verifiedMembership = await dbClient
+          .select({
+            role: schema.memberships.role,
+          })
+          .from(schema.memberships)
+          .where(
+            and(
+              eq(schema.memberships.userId, internalUserId),
+              eq(schema.memberships.tenantId, claimedTenantId),
+            ),
+          )
+          .limit(1)
+
+        if (verifiedMembership[0]) {
+          tenantId = claimedTenantId
+          role = verifiedMembership[0].role as Role
+        }
+      }
+
+      // If claims were missing or did not match an active membership (e.g. fresh onboarding or stale token), resolve from DB
+      if (!tenantId) {
         const userRows = await dbClient
           .select({
             userId: schema.users.id,
@@ -60,14 +83,14 @@ export async function getSessionContext(): Promise<SessionContext> {
           tenantId = userRows[0].tenantId
           role = userRows[0].role as Role
         }
-      } catch (dbErr) {
-        console.warn('[auth] DB session lookup fallback error:', dbErr)
       }
+    } catch (dbErr) {
+      console.warn('[auth] DB session lookup error:', dbErr)
     }
   }
 
   if (!tenantId || !internalUserId) {
-    // This happens when a user has signed up but hasn't completed onboarding
+    // This happens when a user has signed up but hasn't completed onboarding or has forged claim
     throw new AuthError('No tenant context in session — complete onboarding first', 403)
   }
 

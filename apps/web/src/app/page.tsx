@@ -197,40 +197,65 @@ export default function HomePage() {
           <MobileNav />
         </header>
 
-        {/* ─── Hero Section ─────────────────────────────────────────────────── */}
+        {/* ─── Hero Section (Two-Column Layout) ────────────────────────────── */}
         <section className="hero-section" aria-labelledby="hero-title">
-          <p className="hero-eyebrow">Reliable keep-alive infrastructure</p>
+          {/* Left Column: Value Proposition & CTAs */}
+          <div className="hero-content">
+            <span className="hero-eyebrow">Reliable keep-alive infrastructure</span>
 
-          <h1 id="hero-title" className="hero-headline">
-            Your services{' '}
-            <span style={{ color: 'var(--color-accent)', fontStyle: 'italic', fontWeight: 600 }}>
-              stay awake.
-            </span>
-            <br />
-            Automatically.
-          </h1>
+            <h1 id="hero-title" className="hero-headline">
+              Your services{' '}
+              <span style={{ color: 'var(--color-accent)', fontStyle: 'italic', fontWeight: 600 }}>
+                stay awake.
+              </span>
+              <br />
+              Automatically.
+            </h1>
 
-          <p className="hero-subhead">
-            Register an endpoint. Pyra pings it on schedule.
-            No sleep mode, no cold start latencies, no forgotten background cron jobs.
-          </p>
+            <p className="hero-subhead">
+              Register an endpoint. Pyra pings it on schedule.
+              No sleep mode, no cold start latencies, no forgotten background cron jobs.
+            </p>
 
-          {/* Heartbeat pulse — demonstrated directly */}
-          <HeartbeatHero />
+            <div className="hero-cta-group">
+              <Link href="/sign-up" className="btn btn-primary btn-lg" id="hero-signup-btn">
+                Start for free
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+              <a href="#how-it-works" className="btn btn-secondary btn-lg">
+                See how it works
+              </a>
+            </div>
 
-          <div className="hero-cta-group">
-            <Link href="/sign-up" className="btn btn-primary btn-lg" id="hero-signup-btn">
-              Start for free
-              <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-            <a href="#how-it-works" className="btn btn-secondary btn-lg">
-              See how it works
-            </a>
+            <p style={{ fontSize: 13, color: 'var(--color-text-dim)', margin: 0 }}>
+              Free forever tier · No credit card required · Instant activation
+            </p>
           </div>
 
-          <p style={{ fontSize: 13, color: 'var(--color-text-dim)', margin: 0 }}>
-            Free forever tier · No credit card required · Instant activation
-          </p>
+          {/* Right Column: Layered Depth Pulse Monitor Card */}
+          <div className="hero-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', marginBottom: 2 }}>
+                  Active telemetry
+                </p>
+                <p style={{ fontSize: 18, fontFamily: 'var(--font-heading)', fontWeight: 700, color: 'var(--color-text)' }}>
+                  Live Signal Monitor
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--tint-success-bg)', border: '1px solid var(--tint-success-border)', padding: '3px 8px', borderRadius: 100 }}>
+                <span className="status-dot up" style={{ width: 6, height: 6 }} />
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-success)' }}>Operational</span>
+              </div>
+            </div>
+
+            <HeartbeatHero />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
+              <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Ping Interval: <strong style={{ color: 'var(--color-text)' }}>60s</strong></span>
+              <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Avg Edge RTT: <strong style={{ color: 'var(--color-accent)' }}>18ms</strong></span>
+            </div>
+          </div>
         </section>
 
         {/* ─── Trusted-by & Telemetry Strip ─────────────────────────────────── */}
@@ -243,10 +268,10 @@ export default function HomePage() {
         <section
           id="features"
           className="reveal"
-          style={{ padding: '88px 24px', maxWidth: 1120, margin: '0 auto' }}
+          style={{ padding: '80px 24px', maxWidth: 1120, margin: '0 auto' }}
           aria-labelledby="features-title"
         >
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <p className="hero-eyebrow" style={{ display: 'inline-block', marginBottom: 12 }}>
               Feature overview
             </p>
@@ -268,7 +293,7 @@ export default function HomePage() {
                     flexDirection: 'column',
                     gap: 12,
                     height: '100%',
-                    padding: '28px 26px',
+                    padding: '24px',
                   }}
                 >
                   <div
@@ -297,18 +322,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ─── How it works (Sequential numbered steps) ─────────────────────── */}
+        {/* ─── How it works (3-Column Desktop Grid) ─────────────────────────── */}
         <section
           id="how-it-works"
           className="reveal"
           style={{
-            padding: '88px 24px',
+            padding: '80px 24px',
             borderTop: '1px solid var(--color-border)',
             background: 'var(--color-surface-alt)',
           }}
           aria-labelledby="how-it-works-title"
         >
-          <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ maxWidth: 1120, margin: '0 auto', textAlign: 'center' }}>
             <p className="hero-eyebrow" style={{ display: 'inline-block', marginBottom: 12 }}>
               Workflow
             </p>
@@ -318,21 +343,21 @@ export default function HomePage() {
             </p>
 
             <div
-              className="stagger-group"
-              style={{ display: 'flex', flexDirection: 'column', marginTop: 48 }}
+              className="grid-3 stagger-group"
+              style={{ gap: 24, marginTop: 40 }}
             >
-              {steps.map((item, i) => (
+              {steps.map((item) => (
                 <div
                   key={item.step}
                   className="card"
                   style={{
                     display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 24,
-                    padding: '28px 28px',
+                    flexDirection: 'column',
+                    gap: 16,
+                    padding: '24px',
                     textAlign: 'left',
-                    marginBottom: i < steps.length - 1 ? 16 : 0,
                     background: 'var(--color-surface)',
+                    height: '100%',
                   }}
                 >
                   <span
@@ -342,17 +367,15 @@ export default function HomePage() {
                       fontWeight: 700,
                       color: 'var(--color-accent)',
                       lineHeight: 1,
-                      minWidth: 48,
-                      flexShrink: 0,
                     }}
                   >
                     {item.step}
                   </span>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: 8, fontWeight: 600 }}>
+                    <h3 style={{ fontSize: '1.2rem', marginBottom: 8, fontWeight: 600 }}>
                       {item.title}
                     </h3>
-                    <p style={{ fontSize: 15, color: 'var(--color-text-muted)', lineHeight: 1.65, margin: 0 }}>
+                    <p style={{ fontSize: 14, color: 'var(--color-text-muted)', lineHeight: 1.6, margin: 0 }}>
                       {item.desc}
                     </p>
                   </div>
@@ -370,13 +393,13 @@ export default function HomePage() {
           id="pricing"
           className="reveal"
           style={{
-            padding: '88px 24px',
+            padding: '80px 24px',
             borderTop: '1px solid var(--color-border)',
           }}
           aria-labelledby="pricing-title"
         >
           <div style={{ maxWidth: 940, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p className="hero-eyebrow" style={{ display: 'inline-block', marginBottom: 12 }}>
                 Transparent pricing
               </p>
@@ -386,7 +409,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid-2 stagger-group" style={{ gap: 28, alignItems: 'stretch' }}>
+            <div className="grid-2 stagger-group" style={{ gap: 24, alignItems: 'stretch' }}>
               {pricingPlans.map((plan) => (
                 <div
                   key={plan.name}
@@ -397,7 +420,7 @@ export default function HomePage() {
                       ? '2px solid var(--color-accent)'
                       : '1px solid var(--color-border)',
                     position: 'relative',
-                    padding: '36px 32px',
+                    padding: '28px 24px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',

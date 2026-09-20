@@ -3,19 +3,22 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // ─── Protected route patterns ─────────────────────────────────────────────────
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/targets(.*)', '/team(.*)', '/settings(.*)'])
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/targets(.*)',
+  '/team(.*)',
+  '/settings(.*)',
+])
 const isAdminRoute = createRouteMatcher(['/api/admin(.*)'])
 const isApiRoute = createRouteMatcher(['/api(.*)'])
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
-  const { userId } = await auth()
-
-  // ─── Redirect unauthenticated users away from protected routes ──────────────
-  if (isProtectedRoute(request) && !userId) {
-    const signInUrl = new URL('/sign-in', request.url)
-    signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname)
-    return NextResponse.redirect(signInUrl)
+  // ─── Protect all app routes using Clerk's native handshake-aware protect ────
+  if (isProtectedRoute(request)) {
+    await auth.protect()
   }
+
+  const { userId } = await auth()
 
   // ─── Admin routes: require authentication (role enforced in route handler) ──
   if (isAdminRoute(request) && !userId) {
@@ -62,6 +65,8 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   // A response header visible to the client is a latent injection point.
 
   return response
+}, {
+  clockSkewInMs: 300000, // 5-minute leeway to tolerate local OS clock drift
 })
 
 export const config = {

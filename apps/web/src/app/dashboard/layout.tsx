@@ -17,8 +17,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   try {
     await getSessionContext()
   } catch (err) {
-    if (err instanceof AuthError && (err.statusCode === 403 || err.message.includes('onboarding'))) {
-      redirect('/onboarding')
+    if (err instanceof AuthError) {
+      if (err.statusCode === 401) {
+        redirect('/sign-in')
+      }
+      if (err.statusCode === 403 || err.message.includes('onboarding')) {
+        redirect('/onboarding')
+      }
     }
     throw err
   }

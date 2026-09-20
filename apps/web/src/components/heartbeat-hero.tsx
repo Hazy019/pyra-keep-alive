@@ -70,7 +70,7 @@ export default function HeartbeatHero() {
       const startDrawTime = performance.now()
       const drawDuration = 1100
 
-      function drawStep(time: number) {
+      const drawStep = (time: number) => {
         const elapsed = time - startDrawTime
         const progress = Math.min(1, elapsed / drawDuration)
         // Ease out quad

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
-import { pingLogs, targets, auditLog } from '@pyra/db/schema'
+import { pingLogs, targets } from '@pyra/db/schema'
 import { eq, desc } from 'drizzle-orm'
-import { History, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import { History, CheckCircle2, XCircle } from 'lucide-react'
+import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
 
 export const metadata: Metadata = { title: 'Execution History' }
 
@@ -57,25 +58,11 @@ export default async function HistoryPage() {
           className="card"
           style={{
             textAlign: 'center',
-            padding: '64px 24px',
+            padding: '56px 24px',
             color: 'var(--color-text-muted)',
           }}
         >
-          <div
-            style={{
-              width: 54,
-              height: 54,
-              borderRadius: '50%',
-              background: 'var(--color-surface-2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-              color: 'var(--color-text-dim)',
-            }}
-          >
-            <History size={26} aria-hidden="true" />
-          </div>
+          <EmptyStateIllustration variant="history" size={120} />
           <h5 style={{ marginBottom: 6, color: 'var(--color-text)' }}>No ping logs yet</h5>
           <p style={{ fontSize: 14, maxWidth: 360, margin: '0 auto 20px' }}>
             When scheduled pings are executed against your registered endpoints, their response codes and latencies will appear here.
