@@ -3,8 +3,9 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { pingLogs, targets } from '@pyra/db/schema'
 import { eq, desc } from 'drizzle-orm'
-import { History, CheckCircle2, XCircle } from 'lucide-react'
+import HistoryTable from '@/components/dashboard/history-table'
 import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
+import { Activity } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Execution History' }
 
@@ -36,7 +37,7 @@ export default async function HistoryPage() {
           .leftJoin(targets, eq(pingLogs.targetId, targets.id))
           .where(eq(pingLogs.tenantId, ctx.tenantId))
           .orderBy(desc(pingLogs.ranAt))
-          .limit(30)
+          .limit(100)
         return rows
       })
     } catch {
@@ -45,12 +46,19 @@ export default async function HistoryPage() {
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: 32 }}>
-        <h4 style={{ marginBottom: 4 }}>History & Execution Logs</h4>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>
-          Recent ping requests, response codes, and round-trip latencies.
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      {/* ─── Header ────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h4 style={{ marginBottom: 6, fontSize: 24, fontWeight: 700 }}>History & Execution Logs</h4>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 14, margin: 0 }}>
+            Containerized audit trail of ping dispatches, HTTP status responses, and round-trip latencies.
+          </p>
+        </div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 'var(--radius-full)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', fontSize: 12.5, color: 'var(--color-text-muted)' }}>
+          <Activity size={14} style={{ color: 'var(--color-accent)' }} />
+          <span>Real-time log buffer (100 runs)</span>
+        </div>
       </div>
 
       {recentPings.length === 0 ? (
@@ -58,72 +66,24 @@ export default async function HistoryPage() {
           className="card"
           style={{
             textAlign: 'center',
-            padding: '56px 24px',
+            padding: '64px 24px',
             color: 'var(--color-text-muted)',
+            borderRadius: 'var(--radius-lg)',
           }}
         >
           <EmptyStateIllustration variant="history" size={120} />
-          <h5 style={{ marginBottom: 6, color: 'var(--color-text)' }}>No ping logs yet</h5>
-          <p style={{ fontSize: 14, maxWidth: 360, margin: '0 auto 20px' }}>
-            When scheduled pings are executed against your registered endpoints, their response codes and latencies will appear here.
+          <h5 style={{ marginBottom: 6, color: 'var(--color-text)' }}>No ping logs captured yet</h5>
+          <p style={{ fontSize: 14, maxWidth: 380, margin: '0 auto 24px' }}>
+            When scheduled background pings run against your registered endpoints, their response codes and latencies will stream into this container.
           </p>
           <a href="/dashboard/targets" className="btn btn-primary btn-sm">
             View targets
           </a>
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Target URL</th>
-                <th>Status</th>
-                <th>HTTP Code</th>
-                <th>Latency</th>
-                <th>Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentPings.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }} className="truncate">
-                      {p.targetUrl ?? 'Unknown Target'}
-                    </span>
-                  </td>
-                  <td>
-                    {p.success ? (
-                      <span className="badge badge-up">
-                        <CheckCircle2 size={12} aria-hidden="true" /> Success
-                      </span>
-                    ) : (
-                      <span className="badge badge-down">
-                        <XCircle size={12} aria-hidden="true" /> Failed
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-                    {p.statusCode ? `${p.statusCode}` : '—'}
-                  </td>
-                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-                    {p.latencyMs !== null ? `${p.latencyMs}ms` : '—'}
-                  </td>
-                  <td className="text-muted text-sm">
-                    {new Date(p.ranAt).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: false,
-                    })}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <HistoryTable logs={recentPings} />
       )}
     </div>
   )
 }
+

@@ -38,6 +38,18 @@ export function handleApiError(err: unknown, correlationId: string): NextRespons
     )
   }
 
+  if (
+    err instanceof Error &&
+    'isApiError' in err &&
+    'statusCode' in err &&
+    typeof (err as { statusCode: unknown }).statusCode === 'number'
+  ) {
+    return NextResponse.json(
+      makeErrorEnvelope(err.message, correlationId),
+      { status: (err as { statusCode: number }).statusCode },
+    )
+  }
+
   // All other errors: generic message, full trace logged server-side
   return NextResponse.json(
     makeErrorEnvelope('An unexpected error occurred. Please try again.', correlationId),

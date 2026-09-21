@@ -7,19 +7,19 @@ export default function ProductShowcase() {
     <section
       className="reveal"
       style={{
-        maxWidth: 1120,
-        margin: '0 auto',
-        padding: '24px 24px 80px',
+        borderTop: '1px solid var(--color-border)',
+        padding: 'var(--section-py-desktop) 0',
         position: 'relative',
       }}
       aria-label="Product preview"
     >
-      <div style={{ textAlign: 'center', marginBottom: 44 }}>
-        <p className="hero-eyebrow" style={{ display: 'inline-block', marginBottom: 12 }}>
+      <div className="section-inner">
+      <div className="section-header">
+        <p className="hero-eyebrow" style={{ display: 'inline-flex', marginBottom: 14 }}>
           Intuitive telemetry
         </p>
         <h2>Engineered for clarity and control</h2>
-        <p style={{ maxWidth: 580, margin: '12px auto 0', fontSize: 17 }}>
+        <p>
           Monitor your serverless APIs, background workers, and hobby endpoints from a single uncluttered workspace.
         </p>
       </div>
@@ -304,6 +304,7 @@ export default function ProductShowcase() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </section>
   )

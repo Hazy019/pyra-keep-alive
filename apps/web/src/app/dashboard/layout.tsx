@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/dashboard/sidebar'
+import MobileNav from '@/components/dashboard/mobile-nav'
 
 import { getSessionContext, AuthError } from '@/lib/auth'
 
@@ -31,7 +32,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="dashboard-layout">
       <Sidebar />
-      <main className="main-content">{children}</main>
+      <div className="dashboard-main-wrapper">
+        <MobileNav />
+        <main className="main-content">{children}</main>
+      </div>
     </div>
   )
 }

@@ -122,6 +122,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               className={`nav-item ${isActive ? 'active' : ''}`}
               id={`nav-${item.label.toLowerCase()}`}
             >

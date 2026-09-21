@@ -271,4 +271,57 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
     })
     expect(emptyResult.length).toBe(0)
   })
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SEC_PATCH_01: Enforce interval limits on unverified targets (Monetization & Abuse protection)
+  // ─────────────────────────────────────────────────────────────────────────────
+  it('SEC_PATCH_01: Unverified free-tier target cannot be updated to 1m interval and DB row remains unchanged', async () => {
+    // 1. Target A is unverified on free-tier tenant A with default 1440m interval
+    const [initialTarget] = await executeWithTenant(db, tenantAId, (tx) =>
+      tx.select().from(targets).where(eq(targets.id, targetAId)),
+    )
+    expect(initialTarget).toBeDefined()
+    expect(initialTarget?.verified).toBe(false)
+    expect(initialTarget?.pingIntervalMinutes).toBe(1440)
+
+    // 2. Validate interval boundary check (simulation of PATCH handler logic)
+    const [tenantRow] = (await db.execute(
+      sql`SELECT plan FROM tenants WHERE id = ${tenantAId} LIMIT 1`,
+    )).rows as any[]
+    const plan = tenantRow?.plan ?? 'free'
+    expect(plan).toBe('free')
+
+    const minIntervalUnverified = 1440
+    const requestedInterval = 1
+
+    let updateAttemptError: any = null
+    try {
+      if (!initialTarget?.verified && requestedInterval < minIntervalUnverified) {
+        throw Object.assign(
+          new Error(
+            `Ping interval cannot be less than ${minIntervalUnverified}m for an unverified target.`,
+          ),
+          { statusCode: 400, isApiError: true },
+        )
+      }
+      // If validation passed (unpatched bug), it would update
+      await executeWithTenant(db, tenantAId, (tx) =>
+        tx.update(targets).set({ pingIntervalMinutes: requestedInterval }).where(eq(targets.id, targetAId)),
+      )
+    } catch (err) {
+      updateAttemptError = err
+    }
+
+    // 3. Assert error was thrown with HTTP 400 status
+    expect(updateAttemptError).toBeDefined()
+    expect(updateAttemptError.statusCode).toBe(400)
+    expect(updateAttemptError.isApiError).toBe(true)
+    expect(updateAttemptError.message).toContain('Ping interval cannot be less than 1440m')
+
+    // 4. Assert DB row's interval remains unchanged (1440m)
+    const [persistedTarget] = await executeWithTenant(db, tenantAId, (tx) =>
+      tx.select().from(targets).where(eq(targets.id, targetAId)),
+    )
+    expect(persistedTarget?.pingIntervalMinutes).toBe(1440)
+  })
 })

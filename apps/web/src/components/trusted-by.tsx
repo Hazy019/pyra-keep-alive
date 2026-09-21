@@ -11,134 +11,144 @@ interface StatItem {
 const STATS: StatItem[] = [
   { value: 14200000, suffix: '+', label: 'Uptime pings dispatched' },
   { value: 99.99, suffix: '%', decimals: 2, label: 'Historical uptime rate' },
-  { value: 8450, suffix: '+', label: 'Monitored developer endpoints' },
-  { value: 42, prefix: '< ', suffix: 'ms', label: 'Global edge check latency' },
+  { value: 8450, suffix: '+', label: 'Monitored endpoints' },
+  { value: 42, prefix: '< ', suffix: 'ms', label: 'Global edge latency' },
 ]
 
 const PARTNERS = [
-  'Render',
-  'Railway',
-  'Fly.io',
-  'Supabase',
-  'Neon',
-  'Vercel',
+  'Render', 'Railway', 'Fly.io', 'Supabase', 'Neon', 'Vercel',
+  'Cloudflare', 'Heroku', 'PlanetScale', 'Upstash',
 ]
+
+// Duplicate for seamless infinite marquee loop
+const MARQUEE_ITEMS = [...PARTNERS, ...PARTNERS]
 
 export default function TrustedBy() {
   return (
     <section
       aria-label="Platform telemetry and supported hosting providers"
-      style={{
-        width: '100%',
-        maxWidth: 1100,
-        margin: '0 auto',
-        padding: '0 24px 72px',
-      }}
+      style={{ width: '100%', padding: '0 0 56px' }}
     >
-      {/* ─── Metric counters with GSAP count-up (bridging hero boundary) ─── */}
+      {/* ─── Metric counters bridging hero boundary ─────────────────────── */}
       <div
-        className="card card-overlap"
         style={{
-          background: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-overlap)',
-          padding: '28px 24px',
-          marginTop: -36,
-          position: 'relative',
-          zIndex: 10,
-          marginBottom: 40,
+          maxWidth: 1100,
+          margin: '0 auto',
+          padding: '0 20px',
         }}
       >
         <div
-          className="grid-4"
+          className="card card-overlap"
           style={{
-            textAlign: 'center',
-            gap: 24,
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-xl)',
+            boxShadow: 'var(--shadow-overlap)',
+            padding: '24px 32px',
+            marginTop: -36,
+            position: 'relative',
+            zIndex: 10,
+            marginBottom: 40,
           }}
         >
-          {STATS.map((stat) => (
-            <div key={stat.label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div
+            className="grid-4"
+            style={{ textAlign: 'center', gap: 0 }}
+          >
+            {STATS.map((stat, i) => (
               <div
-                className="stat-number"
-                data-value={stat.value}
-                data-prefix={stat.prefix ?? ''}
-                data-suffix={stat.suffix ?? ''}
-                data-decimals={stat.decimals ?? 0}
+                key={stat.label}
                 style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(1.75rem, 2.5vw, 2.25rem)',
-                  fontWeight: 700,
-                  color: 'var(--color-text)',
-                  lineHeight: 1.1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  padding: '8px 16px',
+                  borderRight: i < STATS.length - 1 ? '1px solid var(--color-border)' : 'none',
                 }}
               >
-                {stat.prefix ?? ''}0{stat.suffix ?? ''}
+                <div
+                  className="stat-number"
+                  data-value={stat.value}
+                  data-prefix={stat.prefix ?? ''}
+                  data-suffix={stat.suffix ?? ''}
+                  data-decimals={stat.decimals ?? 0}
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: 'clamp(1.6rem, 2.5vw, 2.1rem)',
+                    fontWeight: 700,
+                    color: 'var(--color-text)',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stat.prefix ?? ''}0{stat.suffix ?? ''}
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'var(--color-text-muted)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {stat.label}
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: 'var(--color-text-muted)',
-                  lineHeight: 1.4,
-                }}
-              >
-                {stat.label}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ─── Platform trust strip ───────────────────────────────────────────── */}
-      <div style={{ textAlign: 'center' }}>
+      {/* ─── Auto-scrolling partner marquee ─────────────────────────────── */}
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <p
           style={{
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
             color: 'var(--color-text-dim)',
-            marginBottom: 18,
           }}
         >
           Reliably keeping services awake across modern clouds
         </p>
+      </div>
 
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '28px 40px',
-            opacity: 0.72,
-          }}
-        >
-          {PARTNERS.map((partner) => (
+      <div className="marquee-wrapper">
+        <div className="marquee-track">
+          {MARQUEE_ITEMS.map((partner, i) => (
             <div
-              key={partner}
+              key={`${partner}-${i}`}
               style={{
-                fontSize: 15,
-                fontWeight: 600,
-                letterSpacing: '-0.02em',
-                color: 'var(--color-text-muted)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
+                padding: '0 32px',
+                whiteSpace: 'nowrap',
               }}
             >
+              {/* Accent dot */}
               <span
                 style={{
                   display: 'inline-block',
-                  width: 7,
-                  height: 7,
+                  width: 6,
+                  height: 6,
                   borderRadius: '50%',
-                  background: 'var(--color-border)',
+                  background: 'var(--color-accent)',
+                  opacity: 0.4,
+                  flexShrink: 0,
                 }}
                 aria-hidden="true"
               />
-              {partner}
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                {partner}
+              </span>
             </div>
           ))}
         </div>

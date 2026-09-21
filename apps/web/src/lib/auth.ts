@@ -5,6 +5,7 @@
  * This is the single enforcement point for "never trust client-supplied tenantId".
  */
 
+import { cache } from 'react'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import type { Role } from '@pyra/shared/types'
@@ -21,9 +22,10 @@ export interface SessionContext {
 
 /**
  * Returns the current session context.
+ * Memoized per-request using React cache() to eliminate duplicate DB queries across layouts and pages.
  * Throws a structured error if the session is invalid or missing tenant context.
  */
-export async function getSessionContext(): Promise<SessionContext> {
+export const getSessionContext = cache(async (): Promise<SessionContext> => {
   const { userId, sessionClaims } = await auth()
 
   if (!userId) {
@@ -95,7 +97,7 @@ export async function getSessionContext(): Promise<SessionContext> {
   }
 
   return { userId: internalUserId, tenantId, role, clerkUserId }
-}
+})
 
 // ─── RBAC enforcement ─────────────────────────────────────────────────────────
 

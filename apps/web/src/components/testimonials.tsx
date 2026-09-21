@@ -44,59 +44,87 @@ export default function Testimonials() {
     <section
       className="reveal"
       style={{
-        maxWidth: 1120,
-        margin: '0 auto',
-        padding: '80px 24px',
         borderTop: '1px solid var(--color-border)',
+        background: 'var(--color-surface-alt)',
+        padding: 'var(--section-py-desktop) 0',
       }}
       aria-label="Customer testimonials"
     >
-      <div style={{ textAlign: 'center', marginBottom: 52 }}>
-        <p className="hero-eyebrow" style={{ display: 'inline-block', marginBottom: 12 }}>
+      <div className="section-inner">
+      <div className="section-header">
+        <p className="hero-eyebrow" style={{ display: 'inline-flex', marginBottom: 14 }}>
           Trusted in production
         </p>
         <h2>What engineers are saying</h2>
-        <p style={{ maxWidth: 540, margin: '12px auto 0', fontSize: 17 }}>
+        <p>
           Join thousands of developers keeping critical endpoints responsive 24/7.
         </p>
       </div>
 
-      <div className="grid-3 stagger-group" style={{ gap: 24 }}>
+      <div className="grid-3 stagger-group" style={{ gap: 16 }}>
         {TESTIMONIALS.map((t) => (
           <div
             key={t.name}
-            className="card"
+            className="card tilt-card"
             style={{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
               height: '100%',
               padding: '24px',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
+            {/* Subtle top accent */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0,
+                height: '2px',
+                background: `linear-gradient(90deg, transparent, ${t.accentColor}50, transparent)`,
+              }}
+              aria-hidden="true"
+            />
+
+            {/* Quote mark */}
+            <div
+              style={{
+                fontSize: 56,
+                fontFamily: 'var(--font-heading)',
+                color: `${t.accentColor}20`,
+                lineHeight: 1,
+                marginBottom: -8,
+                marginTop: -4,
+                userSelect: 'none',
+              }}
+              aria-hidden="true"
+            >
+              &ldquo;
+            </div>
+
             <blockquote
               style={{
-                fontSize: 15,
-                lineHeight: 1.7,
+                fontSize: 14,
+                lineHeight: 1.72,
                 color: 'var(--color-text)',
                 margin: 0,
-                marginBottom: 24,
+                marginBottom: 20,
                 fontStyle: 'normal',
               }}
             >
-              &ldquo;{t.quote}&rdquo;
+              {t.quote}
             </blockquote>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {/* Initials avatar with warm palette */}
               <div
                 style={{
                   width: 40,
                   height: 40,
                   borderRadius: '50%',
-                  background: 'var(--color-surface-2)',
-                  border: `1.5px solid ${t.accentColor}`,
-                  color: 'var(--color-text)',
+                  background: `${t.accentColor}14`,
+                  border: `1.5px solid ${t.accentColor}40`,
+                  color: t.accentColor,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -109,7 +137,6 @@ export default function Testimonials() {
               >
                 {t.initials}
               </div>
-
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
                   {t.name}
@@ -121,6 +148,7 @@ export default function Testimonials() {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </section>
   )

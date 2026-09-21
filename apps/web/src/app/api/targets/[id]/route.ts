@@ -10,7 +10,7 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { handleApiError } from '@/lib/api-error'
 import { getTarget, updateTarget, deleteTarget, getRecentPingLogs } from '@/lib/repositories/target.repo'
-import { AUDIT_ACTIONS } from '@pyra/shared/types'
+import { AUDIT_ACTIONS, PLAN_LIMITS } from '@pyra/shared/types'
 import { sql } from 'drizzle-orm'
 import type { DbInstance } from '@/lib/db'
 import type { AuditDb } from '@pyra/shared/audit'
@@ -73,6 +73,29 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       const existing = await getTarget(db, sessionCtx.tenantId, id)
       if (!existing) return null
 
+      // Enforce plan limits and domain verification rules on ping interval
+      if (parsed.pingIntervalMinutes !== undefined) {
+        const tenantRows = await db.execute(
+          sql`SELECT plan FROM tenants WHERE id = ${sessionCtx.tenantId} LIMIT 1`,
+        )
+        const plan = ((tenantRows.rows[0] as Record<string, unknown>)?.['plan'] as string) ?? 'free'
+        const limits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] ?? PLAN_LIMITS.free
+        const minAllowed = existing.verified
+          ? limits.minIntervalVerified
+          : limits.minIntervalUnverified
+
+        if (parsed.pingIntervalMinutes < minAllowed) {
+          throw Object.assign(
+            new Error(
+              `Ping interval cannot be less than ${minAllowed}m for ${
+                existing.verified ? 'your plan' : 'an unverified target'
+              }.`,
+            ),
+            { statusCode: 400, isApiError: true },
+          )
+        }
+      }
+
       let authHeaderEncrypted: Buffer | null | undefined = undefined
       if (parsed.authHeader !== undefined) {
         if (parsed.authHeader === null) {
@@ -110,6 +133,14 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
     return NextResponse.json({ ...result, authHeaderEncrypted: undefined })
   } catch (err) {
+    if (
+      err instanceof Error &&
+      'isApiError' in err &&
+      'statusCode' in err
+    ) {
+      const e = err as Error & { statusCode: number }
+      return NextResponse.json({ error: e.message, correlationId }, { status: e.statusCode })
+    }
     return handleApiError(err, correlationId)
   }
 }

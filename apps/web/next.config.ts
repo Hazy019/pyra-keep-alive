@@ -1,10 +1,29 @@
 import type { NextConfig } from 'next'
 
+// Suppress Node.js DEP0005 (Buffer() deprecation) emitted by internal pg/postgres drivers
+if (typeof process !== 'undefined' && process.emitWarning) {
+  const originalEmitWarning = process.emitWarning
+  process.emitWarning = function (warning: any, ...args: any[]) {
+    if (typeof warning === 'string' && (warning.includes('DEP0005') || warning.includes('Buffer() is deprecated'))) {
+      return
+    }
+    if (typeof warning === 'object' && warning && (warning.code === 'DEP0005' || warning.name === 'DeprecationWarning' && warning.message?.includes('Buffer()'))) {
+      return
+    }
+    return (originalEmitWarning as any).apply(process, [warning, ...args])
+  }
+}
+
 const nextConfig: NextConfig = {
   // Strict mode catches React lifecycle issues earlier
   reactStrictMode: true,
 
   transpilePackages: ['@pyra/db', '@pyra/shared'],
+
+  // Fast compilation by avoiding parsing huge barrel files (lucide-react)
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
 
   // Security headers applied to all routes
   async headers() {

@@ -70,7 +70,7 @@ export default async function TeamPage() {
       </div>
 
       <div className="table-wrapper" style={{ marginBottom: 32 }}>
-        <table>
+        <table style={{ minWidth: 540 }}>
           <thead>
             <tr>
               <th>Member</th>
@@ -145,6 +145,7 @@ export default async function TeamPage() {
           background: 'var(--color-surface)',
           padding: 24,
           border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-lg)',
         }}
       >
         <h5 style={{ marginBottom: 12 }}>Role Permissions Overview</h5>
