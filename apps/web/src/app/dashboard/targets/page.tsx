@@ -116,16 +116,7 @@ export default async function TargetsPage() {
                           ? `${target.pingIntervalMinutes}m`
                           : `${Math.round(target.pingIntervalMinutes / 60)}h`}
                       </span>
-                      {target.verified ? (
-                        <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>✓ Verified</span>
-                      ) : (
-                        <a
-                          href={`/dashboard/targets/${target.id}/verify`}
-                          style={{ fontSize: 12, color: 'var(--color-accent)', textDecoration: 'none' }}
-                        >
-                          Verify domain →
-                        </a>
-                      )}
+                      <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>● Active</span>
                     </div>
                   </div>
                 </div>

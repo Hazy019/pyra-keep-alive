@@ -95,13 +95,13 @@ export async function POST(request: Request) {
         })
       }
 
-      // Validate ping interval against plan limits (default: unverified minimum)
-      const requestedInterval = parsed.pingIntervalMinutes ?? limits.minIntervalUnverified
-      const minAllowed = limits.minIntervalUnverified
+      // Validate ping interval against plan limits (5m free, 1m team)
+      const requestedInterval = parsed.pingIntervalMinutes ?? limits.minInterval
+      const minAllowed = limits.minInterval
       if (requestedInterval < minAllowed) {
         throw Object.assign(
           new Error(
-            `Ping interval ${requestedInterval}m is below the minimum allowed (${minAllowed}m) for unverified targets on your plan. Verify your domain to unlock shorter intervals.`,
+            `Ping interval ${requestedInterval}m is below the minimum allowed (${minAllowed}m) for your plan.`,
           ),
           { statusCode: 400, isApiError: true },
         )
@@ -117,12 +117,12 @@ export async function POST(request: Request) {
       // 5. Generate verification token
       const verificationToken = randomUUID()
 
-      // 6. Create target
+      // 6. Create target (ready and active immediately, zero hassle)
       const target = await createTarget(db, {
         tenantId: ctx.tenantId,
         url: parsed.url,
         authHeaderEncrypted,
-        verified: false,
+        verified: true,
         verificationToken,
         pingIntervalMinutes: requestedInterval,
         createdBy: ctx.userId,

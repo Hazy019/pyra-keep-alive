@@ -17,7 +17,7 @@ export default function AddTargetButton() {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState('')
   const [authHeader, setAuthHeader] = useState('')
-  const [interval, setInterval] = useState(10)
+  const [interval, setInterval] = useState(5)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -181,15 +181,15 @@ export default function AddTargetButton() {
                   onChange={(e) => setInterval(Number(e.target.value))}
                   style={{ cursor: 'pointer' }}
                 >
-                  <option value={10}>Every 10 minutes (Recommended for Render, Fly, Railway)</option>
+                  <option value={5}>Every 5 minutes (Recommended — prevents container sleep)</option>
+                  <option value={10}>Every 10 minutes</option>
                   <option value={15}>Every 15 minutes</option>
                   <option value={30}>Every 30 minutes</option>
                   <option value={60}>Every hour</option>
-                  <option value={5}>Every 5 minutes (Verified domain)</option>
-                  <option value={1}>Every minute (Verified + Team plan)</option>
+                  <option value={1}>Every minute (Team plan)</option>
                 </select>
                 <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
-                  Default 10-minute cadence keeps free-tier containers alive without requiring domain verification.
+                  No domain verification needed. Any valid HTTP/HTTPS endpoint works immediately.
                 </p>
               </div>
 

@@ -73,23 +73,19 @@ export async function PATCH(request: Request, ctx: RouteContext) {
       const existing = await getTarget(db, sessionCtx.tenantId, id)
       if (!existing) return null
 
-      // Enforce plan limits and domain verification rules on ping interval
+      // Enforce plan limits on ping interval (5m free, 1m team)
       if (parsed.pingIntervalMinutes !== undefined) {
         const tenantRows = await db.execute(
           sql`SELECT plan FROM tenants WHERE id = ${sessionCtx.tenantId} LIMIT 1`,
         )
         const plan = ((tenantRows.rows[0] as Record<string, unknown>)?.['plan'] as string) ?? 'free'
         const limits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] ?? PLAN_LIMITS.free
-        const minAllowed = existing.verified
-          ? limits.minIntervalVerified
-          : limits.minIntervalUnverified
+        const minAllowed = limits.minInterval ?? limits.minIntervalVerified ?? 5
 
         if (parsed.pingIntervalMinutes < minAllowed) {
           throw Object.assign(
             new Error(
-              `Ping interval cannot be less than ${minAllowed}m for ${
-                existing.verified ? 'your plan' : 'an unverified target'
-              }.`,
+              `Ping interval cannot be less than ${minAllowed}m for your plan.`,
             ),
             { statusCode: 400, isApiError: true },
           )

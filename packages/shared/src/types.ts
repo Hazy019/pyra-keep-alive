@@ -25,17 +25,18 @@ export type Plan = (typeof PLANS)[number]
 export const PLAN_LIMITS = {
   free: {
     maxTargets: 3,
-    /** Minimum interval in minutes allowed without verification (keeps Render/Fly/Railway awake) */
-    minIntervalUnverified: 10,
-    /** Minimum interval in minutes for verified targets */
+    /** Minimum interval in minutes allowed (keeps Render/Fly/Railway awake, zero verification required) */
+    minInterval: 5,
+    minIntervalUnverified: 5,
     minIntervalVerified: 5,
   },
   team: {
     maxTargets: 50,
-    minIntervalUnverified: 5,
+    minInterval: 1,
+    minIntervalUnverified: 1,
     minIntervalVerified: 1, // every minute
   },
-} satisfies Record<Plan, { maxTargets: number; minIntervalUnverified: number; minIntervalVerified: number }>
+} satisfies Record<Plan, { maxTargets: number; minInterval: number; minIntervalUnverified: number; minIntervalVerified: number }>
 
 // ─── API Error Envelope ─────────────────────────────────────────────────────
 export interface ApiErrorEnvelope {

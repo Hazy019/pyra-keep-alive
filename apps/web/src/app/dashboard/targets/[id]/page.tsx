@@ -67,13 +67,9 @@ export default async function TargetDetailPage({
         <div>
           <h4 style={{ marginBottom: 6, wordBreak: 'break-all' }}>{target.url}</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            {target.verified ? (
-              <span className="badge badge-up">
-                <CheckCircle2 size={12} aria-hidden="true" /> Domain Verified
-              </span>
-            ) : (
-              <span className="badge badge-pending">Unverified Domain</span>
-            )}
+            <span className="badge badge-up">
+              <CheckCircle2 size={12} aria-hidden="true" /> Active Monitoring
+            </span>
             <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
               Cadence: Every{' '}
               {target.pingIntervalMinutes < 60
@@ -82,15 +78,6 @@ export default async function TargetDetailPage({
             </span>
           </div>
         </div>
-
-        {!target.verified && (
-          <Link
-            href={`/dashboard/targets/${id}/verify`}
-            className="btn btn-primary btn-sm"
-          >
-            Verify Domain →
-          </Link>
-        )}
       </div>
 
       <div className="grid-3" style={{ gap: 16, marginBottom: 32 }}>
