@@ -39,15 +39,36 @@ export function encryptAuthHeader(plaintext: string): string {
   return Buffer.concat([iv, tag, encrypted]).toString('base64')
 }
 
-/** Decrypts a base64 blob back to the plaintext auth header. */
-export function decryptAuthHeader(encryptedB64: string): string {
-  const key = getMasterKey()
-  const buf = Buffer.from(encryptedB64, 'base64')
+/** Decrypts an encrypted auth header blob (Buffer or base64/hex string). */
+export function decryptAuthHeader(encryptedInput: Buffer | string): string {
+  const buf = Buffer.isBuffer(encryptedInput)
+    ? encryptedInput
+    : typeof encryptedInput === 'string' && encryptedInput.startsWith('\\x')
+      ? Buffer.from(encryptedInput.slice(2), 'hex')
+      : Buffer.from(encryptedInput, 'base64')
+
   if (buf.length < IV_LENGTH + AUTH_TAG_LENGTH) throw new Error('Invalid encrypted blob')
   const iv = buf.subarray(0, IV_LENGTH)
   const tag = buf.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH)
   const ciphertext = buf.subarray(IV_LENGTH + AUTH_TAG_LENGTH)
-  const decipher = createDecipheriv(ALGORITHM, key, iv)
-  decipher.setAuthTag(tag)
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8')
+
+  const primaryKey = getMasterKey()
+  const keysToTry = [primaryKey]
+  const fallbackKey = Buffer.from(DEV_FALLBACK_KEY_B64, 'base64')
+  if (!fallbackKey.equals(primaryKey)) {
+    keysToTry.push(fallbackKey)
+  }
+
+  let lastErr: unknown
+  for (const key of keysToTry) {
+    try {
+      const decipher = createDecipheriv(ALGORITHM, key, iv)
+      decipher.setAuthTag(tag)
+      return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8')
+    } catch (err) {
+      lastErr = err
+    }
+  }
+
+  throw lastErr
 }

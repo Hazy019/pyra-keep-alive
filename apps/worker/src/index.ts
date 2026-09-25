@@ -13,6 +13,12 @@ import { createNotificationWorker } from './notifications.js'
 const PORT = Number(process.env['PORT'] ?? 8080)
 
 async function main() {
+  try {
+    process.loadEnvFile?.()
+  } catch {
+    // Ignore if .env doesn't exist
+  }
+
   // ─── Database ─────────────────────────────────────────────────────────────
   const db = createDb(process.env['DATABASE_URL'] ?? '')
 
