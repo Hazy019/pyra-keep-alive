@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { promises as dns } from 'node:dns'
-import { requireRole } from '@/lib/auth'
+import { requireRoleApi } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { handleApiError } from '@/lib/api-error'
 import { getTarget, verifyTarget } from '@/lib/repositories/target.repo'
@@ -21,6 +21,7 @@ import type { DbInstance } from '@/lib/db'
 import type { AuditDb } from '@pyra/shared/audit'
 import { writeAuditLog } from '@pyra/shared/audit'
 import { validateTargetUrl } from '@pyra/shared/ssrf'
+import { checkRateLimit, targetVerifyRatelimit } from '@/lib/ratelimit'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -30,7 +31,23 @@ export async function POST(_req: Request, ctx: RouteContext) {
   const correlationId = randomUUID()
   try {
     const { id } = await ctx.params
-    const sessionCtx = await requireRole('member')
+    const sessionCtx = await requireRoleApi('member')
+
+    // Rate limit: max 10 verification attempts per minute per tenant/target
+    const rateLimit = await checkRateLimit(targetVerifyRatelimit, `${sessionCtx.tenantId}:${id}`)
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many verification attempts. Please try again shortly.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.max(1, Math.ceil((rateLimit.reset - Date.now()) / 1000))),
+            'X-RateLimit-Limit': String(rateLimit.limit),
+            'X-RateLimit-Remaining': String(rateLimit.remaining),
+          },
+        },
+      )
+    }
 
     const verificationResult = await withTenant(sessionCtx.tenantId, async (db) => {
       const target = await getTarget(db, sessionCtx.tenantId, id)
@@ -43,26 +60,78 @@ export async function POST(_req: Request, ctx: RouteContext) {
       const parsed = new URL(target.url)
       const hostname = parsed.hostname
 
-      // Attempt DNS TXT verification first (support both _pyra-challenge and _pyra-verify)
       let verified = false
       let method = ''
 
-      const dnsCandidates = [`_pyra-challenge.${hostname}`, `_pyra-verify.${hostname}`]
-      for (const hostCandidate of dnsCandidates) {
-        try {
-          const txtRecords = await dns.resolveTxt(hostCandidate)
-          const flat = txtRecords.flat()
-          if (flat.some((r) => r === `pyra-verify=${token}` || r === token)) {
-            verified = true
-            method = 'dns_txt'
-            break
-          }
-        } catch {
-          // Candidate failed, try next
+      // ─── 1. Direct Target URL Probe (HTML <meta>, HTTP Header, JSON) ─────
+      // Ideal for Vercel, Render, Railway, Fly, and SPA apps on cloud subdomains
+      try {
+        await validateTargetUrl(target.url)
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 6000)
+
+        const response = await fetch(target.url, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Pyra-Verification/1.0 (+https://pyra-keep-alive-web.vercel.app)',
+            'Accept': '*/*',
+          },
+          redirect: 'follow',
+          signal: controller.signal,
+        })
+        clearTimeout(timeout)
+
+        // 1a. Check HTTP Response Headers
+        const headerVal = response.headers.get('x-pyra-verification') ||
+          response.headers.get('pyra-verification') ||
+          response.headers.get('x-pyra-token')
+
+        if (headerVal && (headerVal.trim() === token || headerVal.trim() === `pyra-verify=${token}`)) {
+          verified = true
+          method = 'http_header'
         }
+
+        // 1b. Check Response Body (HTML <meta> tag or JSON payload)
+        if (!verified && response.ok) {
+          const bodyText = await response.text()
+          // Truncate check to first 128KB to prevent regex DOS on huge responses
+          const sample = bodyText.slice(0, 131072)
+
+          // HTML <meta> tag: <meta name="pyra-verification" content="..."> or <meta content="..." name="pyra-verification">
+          const metaRegex = /<meta\s+[^>]*?(?:name=["'](?:pyra-verification|pyra_verification)["'][^>]*?content=["']([^"']+)["']|content=["']([^"']+)["'][^>]*?name=["'](?:pyra-verification|pyra_verification)["'])[^>]*>/i
+          const metaMatch = sample.match(metaRegex)
+          if (metaMatch) {
+            const extractedToken = (metaMatch[1] || metaMatch[2] || '').trim()
+            if (extractedToken === token || extractedToken === `pyra-verify=${token}`) {
+              verified = true
+              method = 'html_meta'
+            }
+          }
+
+          // JSON response: { "pyra": "...", "status": "ok" } or { "pyra_verification": "..." }
+          if (!verified && (sample.trimStart().startsWith('{') || sample.trimStart().startsWith('['))) {
+            try {
+              const json = JSON.parse(sample)
+              if (
+                json.pyra === token ||
+                json.pyra_verification === token ||
+                json.pyra_verify === token ||
+                json.pyra_challenge === token ||
+                json.token === token
+              ) {
+                verified = true
+                method = 'json_response'
+              }
+            } catch {
+              // Not valid JSON, continue
+            }
+          }
+        }
+      } catch {
+        // Direct probe failed, fallback to well-known & DNS
       }
 
-      // If DNS failed, try well-known file (with SSRF protection, supporting both routes)
+      // ─── 2. Well-Known HTTP Route ──────────────────────────────────────────
       if (!verified) {
         const wellKnownPaths = ['/.well-known/pyra-challenge', '/.well-known/pyra-verify']
         for (const path of wellKnownPaths) {
@@ -72,7 +141,10 @@ export async function POST(_req: Request, ctx: RouteContext) {
 
             const controller = new AbortController()
             const timeout = setTimeout(() => controller.abort(), 5000)
-            const response = await fetch(wellKnownUrl, { signal: controller.signal })
+            const response = await fetch(wellKnownUrl, {
+              headers: { 'User-Agent': 'Pyra-Verification/1.0' },
+              signal: controller.signal,
+            })
             clearTimeout(timeout)
 
             if (response.ok) {
@@ -85,6 +157,24 @@ export async function POST(_req: Request, ctx: RouteContext) {
             }
           } catch {
             // Well-known candidate failed
+          }
+        }
+      }
+
+      // ─── 3. DNS TXT Record (Custom apex domains) ───────────────────────────
+      if (!verified) {
+        const dnsCandidates = [`_pyra-challenge.${hostname}`, `_pyra-verify.${hostname}`]
+        for (const hostCandidate of dnsCandidates) {
+          try {
+            const txtRecords = await dns.resolveTxt(hostCandidate)
+            const flat = txtRecords.flat()
+            if (flat.some((r) => r === `pyra-verify=${token}` || r === token)) {
+              verified = true
+              method = 'dns_txt'
+              break
+            }
+          } catch {
+            // Candidate failed, try next
           }
         }
       }
@@ -118,7 +208,8 @@ export async function POST(_req: Request, ctx: RouteContext) {
     if (verificationResult.status === 'not_verified') {
       return NextResponse.json(
         {
-          error: 'Verification failed. Ensure the DNS TXT record or well-known file is in place.',
+          error:
+            'Verification check failed. We checked: 1) HTML <meta> tag, 2) HTTP x-pyra-verification header, 3) JSON pyra property, 4) /.well-known/pyra-challenge, and 5) DNS TXT. None matched your token.',
           token: verificationResult.token,
           correlationId,
         },

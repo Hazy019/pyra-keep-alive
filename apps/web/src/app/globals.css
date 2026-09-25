@@ -39,9 +39,9 @@
   --radius-lg:  16px;
   --radius-xl:  24px;
 
-  /* Section rhythm — tighter for premium density */
-  --section-py-desktop: 56px;
-  --section-py-mobile:  36px;
+  /* Section rhythm — calibrated for balanced vertical density */
+  --section-py-desktop: 80px;
+  --section-py-mobile:  48px;
 
   /* Card depth */
   --shadow-resting: 0 1px 2px rgba(33, 29, 26, 0.06), 0 1px 6px rgba(33, 29, 26, 0.04);
@@ -505,7 +505,7 @@ a:hover { color: var(--color-secondary); }
 .hero-section {
   position: relative;
   z-index: 1;
-  padding: var(--section-py-desktop) 20px 60px;
+  padding: 64px 20px 32px;
   max-width: 1140px;
   margin: 0 auto;
   display: grid;
@@ -655,27 +655,28 @@ a:hover { color: var(--color-secondary); }
 /* ─── Section header ─────────────────────────────────────────────────────── */
 .section-header {
   text-align: center;
-  margin-bottom: 44px;
+  margin-bottom: 32px;
 }
 .section-header p:last-child {
   max-width: 540px;
-  margin: 10px auto 0;
-  font-size: 16px;
+  margin: 8px auto 0;
+  font-size: 15px;
 }
 
 /* ─── How-it-works step connector ────────────────────────────────────────── */
 .steps-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0;
+  gap: 20px;
   position: relative;
+  width: 100%;
 }
 .steps-grid::before {
   content: '';
   position: absolute;
   top: 36px;
-  left: calc(16.67% + 12px);
-  right: calc(16.67% + 12px);
+  left: calc(16.67% + 10px);
+  right: calc(16.67% + 10px);
   height: 1px;
   background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-border) 50%, var(--color-accent) 100%);
   opacity: 0.4;
@@ -692,7 +693,7 @@ a:hover { color: var(--color-secondary); }
   flex-direction: column;
   gap: 14px;
   position: relative;
-  margin: 0 8px;
+  margin: 0;
   transition: transform 300ms var(--ease-out-expo), box-shadow 300ms ease, border-color 200ms ease;
 }
 .step-card:hover {
@@ -1400,6 +1401,12 @@ td {
   .sign-in-outer { grid-template-columns: 1fr; }
   .sign-in-brand { display: none; }
   .sign-in-form-panel { padding: 32px 20px; min-height: 100vh; }
+}
+
+@media (min-width: 901px) {
+  .steps-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
 }
 
 @media (max-width: 640px) {

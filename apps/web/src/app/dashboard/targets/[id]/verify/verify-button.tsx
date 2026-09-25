@@ -28,10 +28,19 @@ export default function VerifyButton({ targetId }: { targetId: string }) {
       const data = (await res.json()) as { message?: string; error?: string; method?: string }
 
       if (res.ok) {
+        const methodLabel =
+          data.method === 'html_meta'
+            ? 'HTML <meta> tag'
+            : data.method === 'http_header'
+              ? 'HTTP response header'
+              : data.method === 'json_response'
+                ? 'JSON payload'
+                : data.method === 'dns_txt'
+                  ? 'DNS TXT record'
+                  : 'well-known HTTP file'
+
         setVerified(true)
-        setMessage(
-          `Domain ownership confirmed via ${data.method === 'dns_txt' ? 'DNS TXT record' : 'well-known HTTP file'}! High-frequency ping cadences are now unlocked.`,
-        )
+        setMessage(`Domain ownership confirmed via ${methodLabel}! High-frequency ping cadences are now unlocked.`)
         setTimeout(() => {
           router.push(`/dashboard/targets/${targetId}`)
           router.refresh()

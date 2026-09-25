@@ -8,6 +8,7 @@ import { createDb } from '@pyra/db'
 import { logger } from '@pyra/shared/logger'
 import { createScheduler } from './scheduler.js'
 import { createPingWorker } from './worker.js'
+import { createNotificationWorker } from './notifications.js'
 
 const PORT = Number(process.env['PORT'] ?? 8080)
 
@@ -30,6 +31,9 @@ async function main() {
   // ─── Ping Worker ──────────────────────────────────────────────────────────
   const pingWorker = createPingWorker(db, redis)
 
+  // ─── Notification Worker ──────────────────────────────────────────────────
+  const notificationWorker = createNotificationWorker(db, redis)
+
   // ─── Fastify health server ─────────────────────────────────────────────────
   const fastify = Fastify({ logger: false })
 
@@ -41,6 +45,7 @@ async function main() {
       redis: redisStatus,
       scheduler: 'running',
       worker: pingWorker.isRunning() ? 'running' : 'stopped',
+      notifications: notificationWorker.isRunning() ? 'running' : 'stopped',
     })
   })
 
@@ -53,6 +58,7 @@ async function main() {
       logger.info({ event: 'worker.shutdown', signal }, 'Graceful shutdown initiated')
       scheduler.stop()
       await pingWorker.close()
+      await notificationWorker.close()
       await fastify.close()
       await redis.quit()
       logger.info({ event: 'worker.shutdown.done' }, 'Shutdown complete')

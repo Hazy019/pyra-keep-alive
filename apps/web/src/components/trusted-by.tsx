@@ -27,7 +27,7 @@ export default function TrustedBy() {
   return (
     <section
       aria-label="Platform telemetry and supported hosting providers"
-      style={{ width: '100%', padding: '0 0 56px' }}
+      style={{ width: '100%', padding: '0 0 24px' }}
     >
       {/* ─── Metric counters bridging hero boundary ─────────────────────── */}
       <div
@@ -45,10 +45,10 @@ export default function TrustedBy() {
             borderRadius: 'var(--radius-xl)',
             boxShadow: 'var(--shadow-overlap)',
             padding: '24px 32px',
-            marginTop: -36,
+            marginTop: -48,
             position: 'relative',
             zIndex: 10,
-            marginBottom: 40,
+            marginBottom: 24,
           }}
         >
           <div

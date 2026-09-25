@@ -166,5 +166,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build web
+      - name: Build web & worker
         run: pnpm build

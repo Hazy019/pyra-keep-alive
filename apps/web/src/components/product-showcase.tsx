@@ -8,16 +8,13 @@ export default function ProductShowcase() {
       className="reveal"
       style={{
         borderTop: '1px solid var(--color-border)',
-        padding: 'var(--section-py-desktop) 0',
+        padding: '64px 0',
         position: 'relative',
       }}
       aria-label="Product preview"
     >
       <div className="section-inner">
       <div className="section-header">
-        <p className="hero-eyebrow" style={{ display: 'inline-flex', marginBottom: 14 }}>
-          Intuitive telemetry
-        </p>
         <h2>Engineered for clarity and control</h2>
         <p>
           Monitor your serverless APIs, background workers, and hobby endpoints from a single uncluttered workspace.

@@ -65,7 +65,12 @@ export async function withTenant<T>(
   return await dbClient.transaction(async (tx) => {
     try {
       await tx.execute(sql`SET LOCAL ROLE pyra_app`)
-    } catch {
+    } catch (err) {
+      if (process.env['NODE_ENV'] === 'production') {
+        throw new Error(
+          `Failed to set role pyra_app for tenant isolation: ${err instanceof Error ? err.message : String(err)}`,
+        )
+      }
       // In local/test environments where pyra_app is not configured, fall back to current role
     }
     await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`)

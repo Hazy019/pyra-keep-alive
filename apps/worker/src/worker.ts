@@ -22,6 +22,7 @@ import type { PingJobPayload } from '@pyra/shared/types'
 import type Redis from 'ioredis'
 import { decryptAuthHeader } from './crypto.js'
 import type { NotificationPayload } from './notifications.js'
+import { Agent, fetch as undiciFetch } from 'undici'
 
 const PING_TIMEOUT_MS = Number(process.env['PING_TIMEOUT_MS'] ?? 10_000)
 const FAILURE_ALERT_THRESHOLD = Number(process.env['FAILURE_ALERT_THRESHOLD'] ?? 3)
@@ -69,25 +70,37 @@ export function createPingWorker(db: Db, redis: Redis) {
         }
       }
 
-      // 3. Execute HTTP ping — bind to the pinned IP to prevent DNS-rebinding
+      // 3. Execute HTTP ping — bind to the pinned IP via undici Agent to prevent DNS-rebinding
       const pingStart = Date.now()
       let statusCode: number | null = null
       let success = false
       let errorMessage: string | null = null
 
+      const pinnedIp = resolvedIps[0]!
+      const isIpv6 = pinnedIp.includes(':')
+      const ipFamily = isIpv6 ? 6 : 4
+
+      const dispatcher = new Agent({
+        connect: {
+          lookup: (_hostname, opts, cb) => {
+            if (opts && (opts as { all?: boolean }).all) {
+              cb(null, [{ address: pinnedIp, family: ipFamily }])
+            } else {
+              cb(null, pinnedIp, ipFamily)
+            }
+          },
+        },
+      })
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), PING_TIMEOUT_MS)
+
       try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), PING_TIMEOUT_MS)
-
-        // Build request with the resolved IP as the actual target,
-        // setting the Host header to the original hostname.
-        const parsed = new URL(url)
-        const pinnedUrl = `${parsed.protocol}//${resolvedIps[0]}${parsed.pathname}${parsed.search}`
-
-        const response = await fetch(pinnedUrl, {
+        const response = await undiciFetch(url, {
           method: 'GET',
-          headers: { ...headers, Host: parsed.hostname },
-          redirect: 'follow',
+          headers,
+          redirect: 'manual',
+          dispatcher,
           signal: controller.signal,
         })
 
@@ -102,6 +115,9 @@ export function createPingWorker(db: Db, redis: Redis) {
         log.warn({ event: 'ping.failed', err, errorMessage }, 'Ping request failed')
         // Rethrow for BullMQ retry logic
         throw new Error(errorMessage)
+      } finally {
+        clearTimeout(timeout)
+        await dispatcher.destroy().catch(() => {})
       }
 
       const latencyMs = Date.now() - pingStart

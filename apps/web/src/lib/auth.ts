@@ -126,6 +126,23 @@ export async function requireRole(minRole: Role): Promise<SessionContext> {
   return ctx
 }
 
+/**
+ * Asserts the current session has at least the required role for API route handlers.
+ * Throws `AuthError` (401/403) directly without invoking Next.js `redirect()`.
+ */
+export async function requireRoleApi(minRole: Role): Promise<SessionContext> {
+  const ctx = await getSessionContext()
+
+  if (!hasRole(ctx.role, minRole)) {
+    throw new AuthError(
+      `Insufficient permissions — requires ${minRole} (current: ${ctx.role})`,
+      403,
+    )
+  }
+
+  return ctx
+}
+
 /** Same as requireRole but for admin actions that also require MFA */
 export async function requireAdminWithMfa(): Promise<SessionContext> {
   const ctx = await requireRole('admin')

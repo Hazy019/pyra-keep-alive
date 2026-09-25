@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
-import { requireRole } from '@/lib/auth'
+import { requireRoleApi } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { handleApiError } from '@/lib/api-error'
 import { getTarget, updateTarget, deleteTarget, getRecentPingLogs } from '@/lib/repositories/target.repo'
@@ -35,7 +35,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
   const correlationId = randomUUID()
   try {
     const { id } = await ctx.params
-    const sessionCtx = await requireRole('viewer')
+    const sessionCtx = await requireRoleApi('viewer')
 
     const result = await withTenant(sessionCtx.tenantId, async (db) => {
       const target = await getTarget(db, sessionCtx.tenantId, id)
@@ -60,7 +60,7 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   const correlationId = randomUUID()
   try {
     const { id } = await ctx.params
-    const sessionCtx = await requireRole('member')
+    const sessionCtx = await requireRoleApi('member')
     const body: unknown = await request.json()
     const parsed = patchSchema.parse(body)
 
@@ -151,7 +151,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   const correlationId = randomUUID()
   try {
     const { id } = await ctx.params
-    const sessionCtx = await requireRole('member')
+    const sessionCtx = await requireRoleApi('member')
 
     const deleted = await withTenant(sessionCtx.tenantId, async (db) => {
       // Ownership check

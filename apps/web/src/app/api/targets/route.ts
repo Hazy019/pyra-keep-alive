@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
-import { requireRole } from '@/lib/auth'
+import { requireRoleApi } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { handleApiError } from '@/lib/api-error'
 import { listTargets, createTarget, countTargets } from '@/lib/repositories/target.repo'
@@ -17,6 +17,7 @@ import { AUDIT_ACTIONS } from '@pyra/shared/types'
 import type { AuditDb } from '@pyra/shared/audit'
 import { sql } from 'drizzle-orm'
 import type { DbInstance } from '@/lib/db'
+import { checkRateLimit, targetCreateRatelimit } from '@/lib/ratelimit'
 
 // ─── Zod schema (strict mode blocks mass assignment) ────────────────────────────
 const createTargetSchema = z
@@ -33,7 +34,7 @@ const createTargetSchema = z
 export async function GET() {
   const correlationId = randomUUID()
   try {
-    const ctx = await requireRole('viewer')
+    const ctx = await requireRoleApi('viewer')
 
     const result = await withTenant(ctx.tenantId, async (db) =>
       listTargets(db, ctx.tenantId),
@@ -50,7 +51,24 @@ export async function GET() {
 export async function POST(request: Request) {
   const correlationId = randomUUID()
   try {
-    const ctx = await requireRole('member')
+    const ctx = await requireRoleApi('member')
+
+    // Rate limit: max 30 target creations per hour per tenant
+    const rateLimit = await checkRateLimit(targetCreateRatelimit, ctx.tenantId)
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many target creations. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.max(1, Math.ceil((rateLimit.reset - Date.now()) / 1000))),
+            'X-RateLimit-Limit': String(rateLimit.limit),
+            'X-RateLimit-Remaining': String(rateLimit.remaining),
+          },
+        },
+      )
+    }
+
     const body: unknown = await request.json()
 
     // 1. Strict input validation

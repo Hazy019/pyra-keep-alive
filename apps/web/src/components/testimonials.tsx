@@ -28,15 +28,6 @@ const TESTIMONIALS: Testimonial[] = [
     initials: 'MC',
     accentColor: '#4C7A46',
   },
-  {
-    quote:
-      'Cleanest uptime tool I have used. Three steps to configure, zero false alarms, and the tamper-evident audit trail gave our compliance team peace of mind.',
-    name: 'Sarah Lindqvist',
-    role: 'Founder & CTO',
-    company: 'Northward Labs',
-    initials: 'SL',
-    accentColor: '#C97B6B',
-  },
 ]
 
 export default function Testimonials() {
@@ -46,22 +37,19 @@ export default function Testimonials() {
       style={{
         borderTop: '1px solid var(--color-border)',
         background: 'var(--color-surface-alt)',
-        padding: 'var(--section-py-desktop) 0',
+        padding: '64px 0',
       }}
       aria-label="Customer testimonials"
     >
       <div className="section-inner">
       <div className="section-header">
-        <p className="hero-eyebrow" style={{ display: 'inline-flex', marginBottom: 14 }}>
-          Trusted in production
-        </p>
         <h2>What engineers are saying</h2>
         <p>
           Join thousands of developers keeping critical endpoints responsive 24/7.
         </p>
       </div>
 
-      <div className="grid-3 stagger-group" style={{ gap: 16 }}>
+      <div className="grid-2 stagger-group" style={{ gap: 20, maxWidth: 860, margin: '0 auto' }}>
         {TESTIMONIALS.map((t) => (
           <div
             key={t.name}

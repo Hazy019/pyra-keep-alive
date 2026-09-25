@@ -25,14 +25,14 @@ export type Plan = (typeof PLANS)[number]
 export const PLAN_LIMITS = {
   free: {
     maxTargets: 3,
-    /** Minimum interval in minutes allowed without verification */
-    minIntervalUnverified: 1440, // once per day
+    /** Minimum interval in minutes allowed without verification (keeps Render/Fly/Railway awake) */
+    minIntervalUnverified: 10,
     /** Minimum interval in minutes for verified targets */
-    minIntervalVerified: 60, // once per hour
+    minIntervalVerified: 5,
   },
   team: {
     maxTargets: 50,
-    minIntervalUnverified: 60,
+    minIntervalUnverified: 5,
     minIntervalVerified: 1, // every minute
   },
 } satisfies Record<Plan, { maxTargets: number; minIntervalUnverified: number; minIntervalVerified: number }>

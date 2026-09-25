@@ -6,7 +6,7 @@
   "scripts": {
     "dev:web": "pnpm --filter @pyra/web dev",
     "dev:worker": "pnpm --filter @pyra/worker dev",
-    "build": "pnpm --filter @pyra/web build",
+    "build": "pnpm --filter @pyra/web build && pnpm --filter @pyra/worker build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",

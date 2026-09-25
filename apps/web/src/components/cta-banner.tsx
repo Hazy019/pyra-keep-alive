@@ -53,28 +53,6 @@ export default function CtaBanner() {
         />
 
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 620, margin: '0 auto' }}>
-          {/* Eyebrow badge */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'rgba(232, 98, 44, 0.15)',
-              border: '1px solid rgba(232, 98, 44, 0.3)',
-              padding: '5px 16px',
-              borderRadius: 100,
-              fontSize: 12,
-              fontWeight: 600,
-              color: '#F5A87A',
-              marginBottom: 24,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-            }}
-          >
-            <Shield size={13} aria-hidden="true" />
-            Zero Setup Fatigue · Free Forever
-          </div>
-
           <h2 style={{ marginBottom: 16, fontSize: 'clamp(1.9rem, 4vw, 2.6rem)' }}>
             Never let a service go cold again.
           </h2>

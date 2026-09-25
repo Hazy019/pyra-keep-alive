@@ -324,16 +324,13 @@ export default function HomePage() {
           id="features"
           className="reveal features-section-bg"
           style={{
-            padding: 'var(--section-py-desktop) 0',
+            padding: '64px 0',
             borderTop: '1px solid var(--color-border)',
           }}
           aria-labelledby="features-title"
         >
           <div className="section-inner">
             <div className="section-header">
-              <p className="hero-eyebrow" style={{ display: 'inline-flex', marginBottom: 14 }}>
-                Feature overview
-              </p>
               <h2 id="features-title">Everything required to stay live</h2>
               <p>
                 Built specifically for modern serverless apps, background workers, and production APIs.
@@ -391,7 +388,7 @@ export default function HomePage() {
           id="how-it-works"
           className="reveal"
           style={{
-            padding: 'var(--section-py-desktop) 0',
+            padding: '64px 0',
             borderTop: '1px solid var(--color-border)',
             background: 'var(--color-surface-alt)',
           }}
@@ -399,9 +396,6 @@ export default function HomePage() {
         >
           <div className="section-inner">
             <div className="section-header">
-              <p className="hero-eyebrow" style={{ display: 'inline-flex', marginBottom: 14 }}>
-                Workflow
-              </p>
               <h2 id="how-it-works-title">Three steps. Then forget about it.</h2>
               <p>Get endpoints scheduled and protected in less than two minutes.</p>
             </div>
@@ -453,7 +447,7 @@ export default function HomePage() {
           id="pricing"
           className="reveal"
           style={{
-            padding: 'var(--section-py-desktop) 0',
+            padding: '64px 0',
             borderTop: '1px solid var(--color-border)',
             position: 'relative',
             overflow: 'hidden',
@@ -477,9 +471,6 @@ export default function HomePage() {
 
           <div className="section-inner" style={{ position: 'relative' }}>
             <div className="section-header">
-              <p className="hero-eyebrow" style={{ display: 'inline-flex', marginBottom: 14 }}>
-                Transparent pricing
-              </p>
               <h2 id="pricing-title">Simple, predictable plans</h2>
               <p>
                 Start free forever. Upgrade when your team grows or latency requirements tighten.

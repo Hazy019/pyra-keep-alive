@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { getTarget, getRecentPingLogs } from '@/lib/repositories/target.repo'
@@ -22,18 +23,20 @@ export default async function TargetDetailPage({
   if (process.env['DATABASE_URL']) {
     try {
       target = await withTenant(ctx.tenantId, (db) => getTarget(db, ctx.tenantId, id))
-      if (target) {
-        pingLogs = await withTenant(ctx.tenantId, (db) =>
-          getRecentPingLogs(db, ctx.tenantId, id, 10),
-        )
+      if (!target) {
+        notFound()
       }
-    } catch {
-      target = null
+      pingLogs = await withTenant(ctx.tenantId, (db) =>
+        getRecentPingLogs(db, ctx.tenantId, id, 10),
+      )
+    } catch (err) {
+      if (err && typeof err === 'object' && 'digest' in err && (err as { digest?: string }).digest?.includes('NEXT_NOT_FOUND')) {
+        throw err
+      }
+      notFound()
     }
-  }
-
-  // Fallback mock object if running without local DB
-  if (!target) {
+  } else {
+    // Fallback mock object ONLY if running in local standalone preview without DB
     target = {
       id,
       tenantId: ctx.tenantId,
