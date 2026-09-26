@@ -28,3 +28,10 @@ ALTER TABLE targets FORCE ROW LEVEL SECURITY;
 ALTER TABLE ping_logs FORCE ROW LEVEL SECURITY;
 ALTER TABLE audit_log FORCE ROW LEVEL SECURITY;
 ALTER TABLE users FORCE ROW LEVEL SECURITY;
+
+-- Grant pyra_app to the current session user so SET LOCAL ROLE pyra_app succeeds without DBA intervention
+DO $$
+BEGIN
+  EXECUTE format('GRANT pyra_app TO %I', CURRENT_USER);
+END $$;
+

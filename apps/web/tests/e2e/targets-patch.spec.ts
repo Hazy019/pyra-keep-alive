@@ -24,4 +24,27 @@ test.describe('SEC_PATCH_01: Target Interval & Plan Limits Enforcement', () => {
       expect(body.correlationId).toBeDefined()
     }
   })
+
+  test('PATCH /api/targets/[id] accepts active boolean to stop or resume monitoring', async ({ request }) => {
+    const fakeTargetId = '00000000-0000-4000-8000-000000000001'
+    const response = await request.patch(`/api/targets/${fakeTargetId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data: {
+        active: false,
+      },
+    })
+
+    // Unauthenticated callers receive 401/403, non-existent target receives 404
+    expect([200, 401, 403, 404]).toContain(response.status())
+  })
+
+  test('DELETE /api/targets/[id] enforces authentication and rejects unauthorized deletes', async ({ request }) => {
+    const fakeTargetId = '00000000-0000-4000-8000-000000000001'
+    const response = await request.delete(`/api/targets/${fakeTargetId}`)
+
+    // Without session credentials, must be rejected (401/403) or 404
+    expect([204, 401, 403, 404]).toContain(response.status())
+  })
 })

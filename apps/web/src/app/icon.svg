@@ -1,15 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
-  <!-- Sleek dark squircle container ensures high visibility on both light and dark browser tabs -->
-  <rect width="32" height="32" rx="7" fill="#12151B"/>
-  
+  <defs>
+    <style>
+      .pyra-pulse-line {
+        stroke: #14161B;
+      }
+      .pyra-beacon-dot {
+        fill: #FF6B35;
+      }
+      @media (prefers-color-scheme: dark) {
+        .pyra-pulse-line {
+          stroke: #F8FAFC;
+        }
+      }
+    </style>
+  </defs>
+
   <!-- Glowing Apex Beacon Dot (Pyra Ember) -->
-  <circle cx="16" cy="7" r="2.6" fill="#FF6B35"/>
-  
-  <!-- Luminous White Pulse Line -->
+  <circle class="pyra-beacon-dot" cx="16" cy="6" r="2.8" />
+
+  <!-- Luminous Pulse Line -->
   <path
-    d="M4 18 H8.5 L10.5 14 L12.8 22 L14.2 18 L16 9.5 L18.2 24.5 L20 15 L21.5 19.5 L23 18 H28"
-    stroke="#F8FAFC"
-    stroke-width="1.9"
+    class="pyra-pulse-line"
+    d="M3 18 H7.5 L9.8 14 L12 22 L13.8 18 L16 8.5 L18.2 24.5 L20 15 L21.6 19.5 L23.2 18 H29"
+    stroke-width="2.2"
     stroke-linecap="round"
     stroke-linejoin="round"
   />

@@ -30,6 +30,7 @@ export const targets = pgTable('targets', {
   verificationToken: text('verification_token'),
   // Capped by plan at the API layer; minimum enforced per verification status
   pingIntervalMinutes: integer('ping_interval_minutes').notNull().default(1440),
+  active: boolean('active').notNull().default(true),
   nextRunAt: timestamp('next_run_at', { withTimezone: true }).notNull().defaultNow(),
   // Consecutive failure counter — reset to 0 on success
   consecutiveFailures: integer('consecutive_failures').notNull().default(0),

@@ -1,218 +1,289 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
- * Heartbeat Hero — animated status line:
- * 1. On load, animates the heartbeat line drawing in via `stroke-dashoffset`.
- * 2. Settles into an idle pulse loop:
- *    - Normal heartbeat wave
- *    - Fades toward flatline
- *    - Ember spark re-ignites signal
- *    - Repeat
- * 3. Includes `<span className="sr-only">` accessible description alongside `aria-hidden="true"` SVG.
- * 4. Respects `prefers-reduced-motion`.
+ * Heartbeat Hero — Continuous ECG Telemetry Wave
+ *
+ * Implements an authentic, continuously scrolling vitals monitor:
+ * 1. Motion never stops: ECG waveform scrolls continuously via direct DOM transforms in requestAnimationFrame (0 React re-renders).
+ * 2. Rare flatline-and-recovery accent: Every 24–42 seconds (randomized), a transient flatline occurs for ~2.5s,
+ *    an ember beacon sparks and re-ignites the pulse signal, returning to steady-state ECG monitoring.
+ * 3. Accessibility: Respects prefers-reduced-motion by rendering a crisp, static beat.
  */
 
-const BEAT_POINTS = [
-  [0, 0], [10, 0], [13, -2], [15, 0],
-  [20, 0], [22, -15], [24, 35], [26, -10], [28, 0],
-  [35, 0], [38, -2], [40, 0],
-  [50, 0], [52, -15], [54, 35], [56, -10], [58, 0],
-  [65, 0], [68, -2], [70, 0],
-  [100, 0],
-] as [number, number][]
+const UNIT_WIDTH = 180
+const CANVAS_WIDTH = 600
+const CANVAS_HEIGHT = 80
+const MID_Y = CANVAS_HEIGHT / 2
+const SCROLL_SPEED = 75 // pixels per second
 
-function pointsToPath(points: [number, number][], width: number, height: number): string {
+// Normalized ECG profile within a single 180px unit
+// x offset (0-180), y displacement from baseline (positive = up, negative = down)
+const ECG_UNIT_POINTS: [number, number][] = [
+  [0, 0],
+  [25, 0],
+  // P-wave
+  [33, 3],
+  [40, 5],
+  [47, 0],
+  [60, 0],
+  // Q-dip
+  [65, -5],
+  // R-peak (high amplitude heartbeat spike)
+  [73, 30],
+  // S-dip (deep deflection)
+  [81, -16],
+  [88, 0],
+  // ST-segment
+  [100, 0],
+  // T-wave
+  [110, 6],
+  [120, 8],
+  [130, 0],
+  [180, 0],
+]
+
+function generateContinuousEcgPath(numUnits: number): string {
+  const points: [number, number][] = []
+
+  for (let u = 0; u < numUnits; u++) {
+    const xBase = u * UNIT_WIDTH
+    for (const [x, y] of ECG_UNIT_POINTS) {
+      points.push([xBase + x, MID_Y - y])
+    }
+  }
+
+  return points
+    .map(([px, py], i) => `${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`)
+    .join(' ')
+}
+
+// 5 units = 900px, guarantees seamless coverage for 600px canvas across 180px wrapping
+const ECG_CONTINUOUS_PATH = generateContinuousEcgPath(5)
+
+// Static reduced-motion single beat path
+const STATIC_ECG_PATH = pointsToPathCentered([
+  [0, 0],
+  [40, 0],
+  [46, 3],
+  [50, 0],
+  [53, -5],
+  [58, 30],
+  [63, -16],
+  [68, 0],
+  [76, 7],
+  [84, 0],
+  [100, 0],
+], CANVAS_WIDTH, CANVAS_HEIGHT)
+
+function pointsToPathCentered(points: [number, number][], width: number, height: number): string {
   const midY = height / 2
   const scaleX = width / 100
-  const scaleY = height / 80
-
   return points
     .map(([x, y], i) => {
       const px = x * scaleX
-      const py = midY - y * scaleY
+      const py = midY - y
       return `${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
     })
     .join(' ')
 }
 
 export default function HeartbeatHero() {
-  const svgRef = useRef<SVGSVGElement>(null)
-  const pathRef = useRef<SVGPathElement>(null)
-  const canvasW = 600
-  const canvasH = 80
-  const midY = canvasH / 2
+  const waveGroupRef = useRef<SVGGElement>(null)
+  const flatlineRef = useRef<SVGLineElement>(null)
+  const sparkGroupRef = useRef<SVGGElement>(null)
+  const sparkDotRef = useRef<SVGCircleElement>(null)
+  const sparkTrailRef = useRef<SVGPathElement>(null)
+  const sparkRingRef = useRef<SVGCircleElement>(null)
 
-  // Animation states
-  const [isDrawn, setIsDrawn] = useState(false)
-  const [drawOffset, setDrawOffset] = useState<number | null>(null)
-  const [pathLength, setPathLength] = useState<number>(800)
-
-  // Idle cycle states
-  const [phase, setPhase] = useState<'beating' | 'fading' | 'sparking'>('beating')
-  const [opacity, setOpacity] = useState(1)
-  const [emberX, setEmberX] = useState<number | null>(null)
-
-  // 1. Initial draw-in animation via stroke-dashoffset
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReducedMotion) {
-      setIsDrawn(true)
-      return
-    }
-
-    if (pathRef.current) {
-      const len = pathRef.current.getTotalLength() || 800
-      setPathLength(len)
-      setDrawOffset(len)
-
-      const startDrawTime = performance.now()
-      const drawDuration = 1100
-
-      const drawStep = (time: number) => {
-        const elapsed = time - startDrawTime
-        const progress = Math.min(1, elapsed / drawDuration)
-        // Ease out quad
-        const ease = 1 - (1 - progress) * (1 - progress)
-        const currentOffset = len * (1 - ease)
-        setDrawOffset(currentOffset)
-
-        if (progress < 1) {
-          requestAnimationFrame(drawStep)
-        } else {
-          setIsDrawn(true)
-          setDrawOffset(0)
-        }
-      }
-
-      requestAnimationFrame(drawStep)
-    } else {
-      setIsDrawn(true)
-    }
-  }, [])
-
-  // 2. Continuous pulse loop after draw-in
-  useEffect(() => {
-    if (!isDrawn) return
-
+    // 1. Accessibility guard: prefers-reduced-motion displays static wave without loop
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) return
 
     let animFrame: number
-    let startTime = performance.now()
-    const CYCLE_MS = 9000
+    let lastTime = performance.now()
+    let scrollPos = 0
 
-    function animate(now: number) {
-      const elapsed = (now - startTime) % CYCLE_MS
-      const progress = elapsed / CYCLE_MS
+    // Schedule the first rare incident (between 24s and 42s)
+    const getRandomInterval = () => (24 + Math.random() * 18) * 1000
+    let nextIncidentTime = lastTime + getRandomInterval()
+    let incidentState: 'idle' | 'flatlining' | 'recovering' = 'idle'
+    let incidentStartTime = 0
+    const INCIDENT_DURATION = 2800 // Total transient duration (flatline + ember reignition)
 
-      if (progress < 0.55) {
-        setPhase('beating')
-        setOpacity(1)
-        setEmberX(null)
-      } else if (progress < 0.85) {
-        const fadeProgress = (progress - 0.55) / 0.30
-        setPhase('fading')
-        setOpacity(1 - fadeProgress * 0.85)
-        setEmberX(null)
+    function loop(now: number) {
+      const dt = Math.min(100, now - lastTime) // Clamp delta to avoid large jump on tab focus
+      lastTime = now
+
+      // Check if time to trigger rare incident
+      if (incidentState === 'idle' && now >= nextIncidentTime) {
+        incidentState = 'flatlining'
+        incidentStartTime = now
+      }
+
+      if (incidentState === 'idle') {
+        // Normal continuous ECG telemetry scroll
+        scrollPos = (scrollPos + (SCROLL_SPEED * dt) / 1000) % UNIT_WIDTH
+        if (waveGroupRef.current) {
+          waveGroupRef.current.style.transform = `translate3d(-${scrollPos.toFixed(2)}px, 0, 0)`
+          waveGroupRef.current.style.opacity = '1'
+        }
+        if (flatlineRef.current) {
+          flatlineRef.current.style.opacity = '0'
+        }
+        if (sparkGroupRef.current) {
+          sparkGroupRef.current.style.display = 'none'
+        }
       } else {
-        setPhase('sparking')
-        setOpacity(0.15)
-        const sparkProgress = (progress - 0.85) / 0.15
-        setEmberX(sparkProgress * canvasW)
-        if (sparkProgress > 0.95) {
-          startTime = now - (CYCLE_MS * 0.02)
+        // Rare flatline accent & recovery sequence
+        const progress = Math.min(1, (now - incidentStartTime) / INCIDENT_DURATION)
+
+        if (progress < 0.45) {
+          // Transition into flatline
+          const fade = progress / 0.45
+          if (waveGroupRef.current) {
+            waveGroupRef.current.style.opacity = `${(1 - fade).toFixed(3)}`
+          }
+          if (flatlineRef.current) {
+            flatlineRef.current.style.opacity = `${(fade * 0.9).toFixed(3)}`
+          }
+          if (sparkGroupRef.current) {
+            sparkGroupRef.current.style.display = 'none'
+          }
+        } else if (progress < 0.85) {
+          // Ember beacon sweeps across to reignite signal
+          const sparkProgress = (progress - 0.45) / 0.40
+          const emberX = sparkProgress * (CANVAS_WIDTH + 80) - 20
+
+          if (waveGroupRef.current) {
+            waveGroupRef.current.style.opacity = '0'
+          }
+          if (flatlineRef.current) {
+            flatlineRef.current.style.opacity = '0.9'
+          }
+          if (sparkGroupRef.current) {
+            sparkGroupRef.current.style.display = 'block'
+          }
+          if (sparkDotRef.current) {
+            sparkDotRef.current.setAttribute('cx', emberX.toFixed(1))
+          }
+          if (sparkRingRef.current) {
+            sparkRingRef.current.setAttribute('cx', emberX.toFixed(1))
+          }
+          if (sparkTrailRef.current) {
+            const startX = Math.max(0, emberX - 70)
+            sparkTrailRef.current.setAttribute('d', `M ${startX} ${MID_Y} L ${emberX} ${MID_Y}`)
+          }
+        } else {
+          // Signal re-ignited: ECG returns to full amplitude
+          const recoverProgress = (progress - 0.85) / 0.15
+          if (sparkGroupRef.current) {
+            sparkGroupRef.current.style.display = 'none'
+          }
+          if (flatlineRef.current) {
+            flatlineRef.current.style.opacity = `${(1 - recoverProgress) * 0.9}`
+          }
+          if (waveGroupRef.current) {
+            waveGroupRef.current.style.opacity = `${recoverProgress.toFixed(3)}`
+          }
+
+          if (progress >= 1) {
+            incidentState = 'idle'
+            nextIncidentTime = now + getRandomInterval()
+          }
         }
       }
 
-      animFrame = requestAnimationFrame(animate)
+      animFrame = requestAnimationFrame(loop)
     }
 
-    animFrame = requestAnimationFrame(animate)
+    animFrame = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(animFrame)
-  }, [isDrawn, canvasW])
-
-  const beatPath = pointsToPath(BEAT_POINTS, canvasW, canvasH)
+  }, [])
 
   return (
-    <div className="heartbeat-container" style={{ position: 'relative' }}>
+    <div className="heartbeat-container" style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Screen reader accessible description */}
       <span className="sr-only">
-        Real-time system pulse monitor showing active endpoint heartbeat signal and uptime telemetry.
+        Real-time system pulse monitor showing active continuous endpoint heartbeat signal and uptime telemetry.
       </span>
 
       <svg
-        ref={svgRef}
-        viewBox={`0 0 ${canvasW} ${canvasH}`}
+        viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}
         className="heartbeat-svg"
         aria-hidden="true"
         focusable="false"
       >
-        {/* Subtle grid line */}
+        {/* Isoelectric background grid datum line */}
         <line
           x1="0"
-          y1={midY}
-          x2={canvasW}
-          y2={midY}
+          y1={MID_Y}
+          x2={CANVAS_WIDTH}
+          y2={MID_Y}
           stroke="var(--color-border)"
           strokeWidth="1"
+          strokeDasharray="4 4"
+          opacity="0.6"
         />
 
-        {/* Flatline: appears as heartbeat fades or before spark */}
+        {/* Transient flatline during rare recovery accent */}
         <line
+          ref={flatlineRef}
           x1="0"
-          y1={midY}
-          x2={canvasW}
-          y2={midY}
+          y1={MID_Y}
+          x2={CANVAS_WIDTH}
+          y2={MID_Y}
           stroke="var(--color-border)"
           strokeWidth="1.5"
-          strokeLinecap="round"
-          opacity={isDrawn && phase === 'sparking' ? 0.8 : isDrawn && phase === 'fading' ? 1 - opacity : 0}
+          opacity="0"
+          style={{ transition: 'opacity 0.2s ease' }}
         />
 
-        {/* Primary heartbeat path */}
+        {/* Continuously scrolling ECG wave group */}
+        <g ref={waveGroupRef} style={{ willChange: 'transform' }}>
+          <path
+            d={ECG_CONTINUOUS_PATH}
+            className="heartbeat-line"
+            style={{
+              vectorEffect: 'non-scaling-stroke',
+            }}
+          />
+        </g>
+
+        {/* Static fallback for reduced motion users */}
         <path
-          ref={pathRef}
-          d={beatPath}
+          d={STATIC_ECG_PATH}
           className="heartbeat-line"
-          style={
-            !isDrawn && drawOffset !== null
-              ? {
-                  strokeDasharray: pathLength,
-                  strokeDashoffset: drawOffset,
-                }
-              : {
-                  opacity,
-                }
-          }
+          style={{
+            display: 'none',
+          }}
+          data-reduced-motion-fallback
         />
 
-        {/* Ember spark re-igniting the signal */}
-        {isDrawn && phase === 'sparking' && emberX !== null && (
-          <>
-            {/* Trail */}
-            <path
-              d={`M ${Math.max(0, emberX - 60)} ${midY} L ${emberX} ${midY}`}
-              stroke="var(--color-accent)"
-              strokeWidth="2.5"
-              opacity="0.4"
-              strokeLinecap="round"
-            />
-            {/* Spark point */}
-            <circle cx={emberX} cy={midY} r="4" className="ember-dot" />
-            {/* Glow ring */}
-            <circle
-              cx={emberX}
-              cy={midY}
-              r="8"
-              fill="none"
-              stroke="var(--color-accent)"
-              strokeWidth="1.5"
-              opacity="0.35"
-            />
-          </>
-        )}
+        {/* Ember spark & beacon group for rare reignition moments */}
+        <g ref={sparkGroupRef} style={{ display: 'none' }}>
+          <path
+            ref={sparkTrailRef}
+            d={`M 0 ${MID_Y} L 0 ${MID_Y}`}
+            stroke="var(--color-accent)"
+            strokeWidth="2.5"
+            opacity="0.4"
+            strokeLinecap="round"
+          />
+          <circle ref={sparkDotRef} cx="0" cy={MID_Y} r="4" className="ember-dot" />
+          <circle
+            ref={sparkRingRef}
+            cx="0"
+            cy={MID_Y}
+            r="8"
+            fill="none"
+            stroke="var(--color-accent)"
+            strokeWidth="1.5"
+            opacity="0.35"
+          />
+        </g>
       </svg>
     </div>
   )

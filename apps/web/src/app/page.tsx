@@ -248,9 +248,15 @@ export default function HomePage() {
                 </a>
               </div>
 
-              <p style={{ fontSize: 12, color: 'var(--color-text-dim)', margin: 0 }}>
-                Free forever tier · No credit card required · Instant activation
-              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                <p style={{ fontSize: 12.5, color: 'var(--color-text-dim)', margin: 0 }}>
+                  Free forever tier · No credit card required · Instant activation
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <Lock size={12} style={{ color: 'var(--color-accent)' }} aria-hidden="true" />
+                  Your credentials are encrypted before they&apos;re stored — we can&apos;t read them, and neither can anyone else.
+                </p>
+              </div>
             </div>
 
             {/* Right: Layered telemetry card */}
@@ -322,7 +328,7 @@ export default function HomePage() {
           id="features"
           className="reveal features-section-bg"
           style={{
-            padding: '64px 0',
+            padding: 'clamp(48px, 6vw, 80px) 0',
             borderTop: '1px solid var(--color-border)',
           }}
           aria-labelledby="features-title"
@@ -386,7 +392,7 @@ export default function HomePage() {
           id="how-it-works"
           className="reveal"
           style={{
-            padding: '64px 0',
+            padding: 'clamp(48px, 6vw, 80px) 0',
             borderTop: '1px solid var(--color-border)',
             background: 'var(--color-surface-alt)',
           }}
@@ -445,7 +451,7 @@ export default function HomePage() {
           id="pricing"
           className="reveal"
           style={{
-            padding: '64px 0',
+            padding: 'clamp(48px, 6vw, 80px) 0',
             borderTop: '1px solid var(--color-border)',
             position: 'relative',
             overflow: 'hidden',

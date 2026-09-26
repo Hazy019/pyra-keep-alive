@@ -62,7 +62,7 @@ export async function updateTarget(
   db: DbInstance,
   tenantId: string,
   targetId: string,
-  updates: Partial<Pick<Target, 'url' | 'pingIntervalMinutes' | 'authHeaderEncrypted'>>,
+  updates: Partial<Pick<Target, 'url' | 'pingIntervalMinutes' | 'authHeaderEncrypted' | 'active' | 'nextRunAt'>>,
 ): Promise<Target | null> {
   const rows = await db
     .update(targets)

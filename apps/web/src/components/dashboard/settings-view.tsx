@@ -12,13 +12,26 @@ import {
   Shield,
   Layers,
   ArrowRight,
+  ScrollText,
+  Lock,
+  Network,
+  History,
 } from 'lucide-react'
+
+export interface AuditLogItem {
+  id: string
+  action: string
+  targetResource: string | null
+  createdAt: Date
+  rowHash: string
+}
 
 interface SettingsViewProps {
   workspaceName: string
   tenantId: string
   plan: string
   targetCount: number
+  recentAuditLogs?: AuditLogItem[]
 }
 
 export default function SettingsView({
@@ -26,6 +39,7 @@ export default function SettingsView({
   tenantId,
   plan,
   targetCount,
+  recentAuditLogs = [],
 }: SettingsViewProps) {
   const [copied, setCopied] = useState(false)
 
@@ -252,75 +266,190 @@ export default function SettingsView({
           </div>
         </div>
 
-        {/* ─── Section 3: Security & Cryptographic Compliance ───────────────── */}
+        {/* ─── Section 3: Security & Cryptographic Controls (Visible Checklist) ── */}
         <div className="settings-section-row">
           <div className="settings-info-col">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <Shield size={18} style={{ color: 'var(--color-success)' }} />
-              <h5>Security & Compliance</h5>
+              <h5>Security & Architecture</h5>
             </div>
             <p>
-              Active defense measures, zero-trust controls, and multi-tenant cryptographic safeguards protecting your workspace.
+              Concrete security controls enforced directly in code and database infrastructure. No synthetic claims.
             </p>
           </div>
 
           <div className="settings-card">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
                 {
-                  title: 'PostgreSQL Row-Level Security',
-                  desc: 'Every SQL query executes within a scoped transaction setting app.current_tenant_id. Zero cross-tenant leaks.',
-                  status: 'Active',
-                  badge: 'Enforced',
+                  title: 'Row-Level Security enforced on every table',
+                  detail: 'Tenant data isolation is enforced at the PostgreSQL kernel level via SET LOCAL app.current_tenant_id. Zero cross-tenant queries are structurally possible.',
                 },
                 {
-                  title: 'AES-256-GCM Envelope Encryption',
-                  desc: 'All target authorization headers and secrets are encrypted with authenticated cipher before disk persistence.',
-                  status: 'Active',
-                  badge: 'Encrypted',
+                  title: 'Credentials encrypted with AES-256-GCM before storage',
+                  detail: 'Custom Authorization headers and authentication secrets are sealed with authenticated symmetric encryption before disk write. We cannot read them, and neither can anyone else.',
                 },
                 {
-                  title: 'Zero Public Database Tables',
-                  desc: 'All tables require authenticated session context. Default public grants are explicitly revoked.',
-                  status: 'Active',
-                  badge: 'Protected',
+                  title: 'Every account and target change recorded in a tamper-evident audit log',
+                  detail: 'Every creation, update, and deletion is recorded in a SHA-256 cryptographically hash-chained ledger to detect any historical record modification.',
                 },
                 {
-                  title: 'Rate Limiting & Abuse Defense',
-                  desc: 'Sliding-window rate limiting via Upstash Redis prevents brute-force attempts and denial-of-service vectors.',
-                  status: 'Active',
-                  badge: 'Protected',
+                  title: 'SSRF protection blocks pings to private networks and cloud metadata',
+                  detail: 'Target URLs are parsed and validated against private IPv4/IPv6 ranges (RFC 1918), loopback interfaces, and cloud link-local metadata endpoints (169.254.169.254).',
                 },
               ].map((item) => (
                 <div
                   key={item.title}
                   style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
                     background: 'var(--color-surface-2)',
                     border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '18px 20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
                   }}
                 >
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: 'var(--color-success)',
+                      boxShadow: '0 0 8px rgba(76, 122, 70, 0.6)',
+                      marginTop: 6,
+                      flexShrink: 0,
+                    }}
+                    aria-label="Active"
+                  />
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <ShieldCheck size={18} style={{ color: 'var(--color-success)' }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)', background: 'var(--tint-success-bg)', color: 'var(--color-success)', border: '1px solid var(--tint-success-border)' }}>
-                        {item.badge}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-text)', display: 'block', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-text)', display: 'block', marginBottom: 3 }}>
                       {item.title}
                     </span>
-                    <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.4 }}>
-                      {item.desc}
+                    <p style={{ fontSize: 12.5, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                      {item.detail}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* ─── Section 4: Activity & Tamper-Evident Audit Trail ──────────────── */}
+        <div className="settings-section-row">
+          <div className="settings-info-col">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <History size={18} style={{ color: 'var(--color-accent)' }} />
+              <h5>Activity & Audit Trail</h5>
+            </div>
+            <p>
+              Real-time ledger of administrative operations and target mutations in this workspace with cryptographic row verification.
+            </p>
+          </div>
+
+          <div className="settings-card">
+            {recentAuditLogs.length === 0 ? (
+              <div
+                style={{
+                  padding: '28px 20px',
+                  textAlign: 'center',
+                  background: 'var(--color-surface-2)',
+                  border: '1px dashed var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 12px auto',
+                    color: 'var(--color-accent)',
+                  }}
+                >
+                  <ScrollText size={20} />
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', display: 'block', marginBottom: 4 }}>
+                  Audit Ledger Initialized
+                </span>
+                <p style={{ fontSize: 12.5, color: 'var(--color-text-muted)', maxWidth: 440, margin: '0 auto', lineHeight: 1.5 }}>
+                  Every endpoint registration, credential update, and interval change in this workspace is permanently signed and hash-chained to guarantee integrity.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {recentAuditLogs.map((log) => {
+                  const dateStr = new Date(log.createdAt).toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                  return (
+                    <div
+                      key={log.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 12,
+                        padding: '12px 16px',
+                        background: 'var(--color-surface-2)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-md)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: 11,
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontWeight: 600,
+                            padding: '3px 8px',
+                            background: 'var(--color-surface)',
+                            border: '1px solid var(--color-border)',
+                            color: 'var(--color-accent)',
+                          }}
+                        >
+                          {log.action}
+                        </span>
+                        <span style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500 }}>
+                          {log.targetResource || 'Workspace Entity'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontFamily: 'var(--font-mono, monospace)',
+                            color: 'var(--color-text-dim)',
+                            background: 'var(--color-surface)',
+                            padding: '2px 6px',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--color-border)',
+                          }}
+                          title={`SHA-256 Row Hash: ${log.rowHash}`}
+                        >
+                          hash:{log.rowHash.slice(0, 8)}…
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                          {dateStr}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

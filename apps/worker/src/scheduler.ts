@@ -41,7 +41,7 @@ export function createScheduler(db: Db, redis: Redis) {
         SET next_run_at = now() + (ping_interval_minutes * interval '1 minute')
         WHERE id IN (
           SELECT id FROM targets
-          WHERE next_run_at <= now()
+          WHERE active = true AND next_run_at <= now()
           ORDER BY next_run_at ASC
           LIMIT ${BATCH_SIZE}
           FOR UPDATE SKIP LOCKED

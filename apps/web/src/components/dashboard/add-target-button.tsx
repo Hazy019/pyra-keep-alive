@@ -227,13 +227,23 @@ export default function AddTargetButton() {
                   onChange={(e) => setAuthHeader(e.target.value)}
                   autoComplete="off"
                 />
-                <p style={{ fontSize: 12, color: isJwt ? 'var(--color-primary)' : 'var(--color-text-muted)', marginTop: 4 }}>
-                  {isJwt
-                    ? '✓ Supabase JWT detected — Pyra will send both apikey and Bearer headers automatically.'
-                    : isSupabaseUrl || isClientEcho
-                      ? 'Paste your Supabase anon public key (from Supabase Studio → Project Settings → API). Stored AES-256-GCM encrypted.'
-                      : 'Stored AES-256-GCM encrypted. If a JWT/Supabase anon key is provided, apikey and Bearer are automatically attached.'}
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, flexWrap: 'wrap', gap: 4 }}>
+                  <p style={{ fontSize: 12, color: isJwt ? 'var(--color-primary)' : 'var(--color-text-muted)', margin: 0 }}>
+                    {isJwt
+                      ? '✓ Supabase JWT detected — Pyra will send both apikey and Bearer headers automatically.'
+                      : isSupabaseUrl || isClientEcho
+                        ? 'Paste your Supabase anon public key. Stored with AES-256-GCM authenticated encryption.'
+                        : 'Stored with AES-256-GCM authenticated encryption.'}
+                  </p>
+                  <a
+                    href="/privacy#security"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: 11.5, color: 'var(--color-accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                  >
+                    How we store your credentials →
+                  </a>
+                </div>
               </div>
 
               <div className="form-group">
@@ -253,7 +263,10 @@ export default function AddTargetButton() {
                   <option value={1}>Every minute (Team plan)</option>
                 </select>
                 <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
-                  No domain verification needed. Any valid HTTP/HTTPS endpoint works immediately.
+                  Any valid HTTP/HTTPS endpoint works immediately.{' '}
+                  <span style={{ color: 'var(--color-text-dim)' }}>
+                    Verifying domain ownership also protects other sites from being pinged on your behalf.
+                  </span>
                 </p>
               </div>
 

@@ -16,9 +16,16 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- ─── Add role check constraint to memberships ─────────────────────────────────
-ALTER TABLE memberships
-  ADD CONSTRAINT memberships_role_check
-  CHECK (role IN ('owner', 'admin', 'member', 'viewer'));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'memberships_role_check'
+  ) THEN
+    ALTER TABLE memberships
+      ADD CONSTRAINT memberships_role_check
+      CHECK (role IN ('owner', 'admin', 'member', 'viewer'));
+  END IF;
+END $$;
 
 -- ─── Enable RLS on all tenant-scoped tables ───────────────────────────────────
 ALTER TABLE tenants         ENABLE ROW LEVEL SECURITY;
@@ -28,57 +35,62 @@ ALTER TABLE ping_logs       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log       ENABLE ROW LEVEL SECURITY;
 
 -- Users table: RLS enabled; each user can only see their own row.
--- (Users aren't multi-tenant, but we lock it anyway to prevent enumeration.)
 ALTER TABLE users           ENABLE ROW LEVEL SECURITY;
 
 -- ─── Tenant isolation policies ───────────────────────────────────────────────
--- Uses `current_setting('app.current_tenant_id', true)` — the `true` (missing_ok)
--- flag means it returns NULL rather than raising an error if the variable isn't set,
--- which causes the policy to evaluate to false (no rows returned).
+DO $$
+BEGIN
+  -- targets: read + write scoped to current tenant
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_targets' AND tablename = 'targets') THEN
+    CREATE POLICY tenant_isolation_targets ON targets
+      USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  END IF;
 
--- targets: read + write scoped to current tenant
-CREATE POLICY tenant_isolation_targets ON targets
-  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  -- ping_logs: read + write scoped to current tenant
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_ping_logs' AND tablename = 'ping_logs') THEN
+    CREATE POLICY tenant_isolation_ping_logs ON ping_logs
+      USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  END IF;
 
--- ping_logs: read + write scoped to current tenant
-CREATE POLICY tenant_isolation_ping_logs ON ping_logs
-  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  -- audit_log: read + write scoped to current tenant
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_audit_log' AND tablename = 'audit_log') THEN
+    CREATE POLICY tenant_isolation_audit_log ON audit_log
+      USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  END IF;
 
--- audit_log: read + write scoped to current tenant
-CREATE POLICY tenant_isolation_audit_log ON audit_log
-  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  -- memberships: a user can see memberships where the tenant_id matches current tenant
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_memberships' AND tablename = 'memberships') THEN
+    CREATE POLICY tenant_isolation_memberships ON memberships
+      USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  END IF;
 
--- memberships: a user can see memberships where the tenant_id matches current tenant
-CREATE POLICY tenant_isolation_memberships ON memberships
-  USING (tenant_id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  -- tenants: a user can see a tenant row if they have a membership in it
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_tenants' AND tablename = 'tenants') THEN
+    CREATE POLICY tenant_isolation_tenants ON tenants
+      USING (id = nullif(current_setting('app.current_tenant_id', true), '')::uuid);
+  END IF;
 
--- tenants: a user can see a tenant row if they have a membership in it
--- (avoids an extra RLS variable; the subquery is safe under our connection pool model)
-CREATE POLICY tenant_isolation_tenants ON tenants
-  USING (
-    id = nullif(current_setting('app.current_tenant_id', true), '')::uuid
-  );
-
--- users: users can see only their own row
--- (current_user_id is set analogously to current_tenant_id by the API layer)
-CREATE POLICY user_isolation_users ON users
-  USING (
-    id = nullif(current_setting('app.current_user_id', true), '')::uuid
-  );
+  -- users: users can see only their own row
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'user_isolation_users' AND tablename = 'users') THEN
+    CREATE POLICY user_isolation_users ON users
+      USING (id = nullif(current_setting('app.current_user_id', true), '')::uuid);
+  END IF;
+END $$;
 
 -- ─── Indexes ─────────────────────────────────────────────────────────────────
 -- Critical for scheduler performance: find due targets fast
-CREATE INDEX idx_targets_next_run_at ON targets (next_run_at)
+CREATE INDEX IF NOT EXISTS idx_targets_next_run_at ON targets (next_run_at)
   WHERE next_run_at IS NOT NULL;
 
 -- RLS lookup acceleration
-CREATE INDEX idx_targets_tenant_id ON targets (tenant_id);
-CREATE INDEX idx_ping_logs_tenant_id ON ping_logs (tenant_id);
-CREATE INDEX idx_ping_logs_target_id ON ping_logs (target_id);
-CREATE INDEX idx_audit_log_tenant_id ON audit_log (tenant_id);
-CREATE INDEX idx_memberships_tenant_id ON memberships (tenant_id);
-CREATE INDEX idx_memberships_user_id ON memberships (user_id);
-CREATE INDEX idx_users_clerk_user_id ON users (clerk_user_id);
+CREATE INDEX IF NOT EXISTS idx_targets_tenant_id ON targets (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ping_logs_tenant_id ON ping_logs (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ping_logs_target_id ON ping_logs (target_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_id ON audit_log (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_memberships_tenant_id ON memberships (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_memberships_user_id ON memberships (user_id);
+CREATE INDEX IF NOT EXISTS idx_users_clerk_user_id ON users (clerk_user_id);
 
 -- Ping history queries (dashboard: last N pings for a target, sorted by time)
-CREATE INDEX idx_ping_logs_target_ran_at ON ping_logs (target_id, ran_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ping_logs_target_ran_at ON ping_logs (target_id, ran_at DESC);
+

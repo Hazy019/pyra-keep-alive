@@ -13,12 +13,16 @@ export function createServerlessDb(connectionString: string): { db: ServerlessDb
   return { db, pool }
 }
 
+export type AnyDb = {
+  transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>
+}
+
 export async function executeWithTenant<T>(
-  db: ServerlessDb,
+  db: ServerlessDb | AnyDb,
   tenantId: string,
   fn: (tx: ServerlessTx) => Promise<T>,
 ): Promise<T> {
-  return await db.transaction(async (tx) => {
+  return await (db as any).transaction(async (tx: ServerlessTx) => {
     try {
       await tx.execute(sql`SET LOCAL ROLE pyra_app`)
     } catch (err) {

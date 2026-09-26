@@ -122,9 +122,15 @@ export default function CtaBanner() {
             </Link>
           </div>
 
-          <p style={{ fontSize: 13, marginTop: 20, color: 'rgba(245,240,235,0.4)' }}>
-            No credit card required · Free 3-target tier · Setup in 60 seconds
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 22, alignItems: 'center' }}>
+            <p style={{ fontSize: 13, margin: 0, color: 'rgba(245,240,235,0.45)' }}>
+              No credit card required · Free 3-target tier · Setup in 60 seconds
+            </p>
+            <p style={{ fontSize: 12.5, margin: 0, color: 'rgba(245,240,235,0.7)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Lock size={12} style={{ color: 'var(--color-accent)' }} aria-hidden="true" />
+              Your credentials are encrypted before they&apos;re stored — we can&apos;t read them, and neither can anyone else.
+            </p>
+          </div>
         </div>
       </div>
     </section>

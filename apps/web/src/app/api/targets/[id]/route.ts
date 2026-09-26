@@ -26,6 +26,7 @@ const patchSchema = z
     url: z.string().url().max(2048).optional(),
     pingIntervalMinutes: z.number().int().min(1).max(10080).optional(),
     authHeader: z.string().max(4096).optional().nullable(),
+    active: z.boolean().optional(),
   })
   .strict()
 
@@ -120,6 +121,10 @@ export async function PATCH(request: Request, ctx: RouteContext) {
         ...(normalizedUrl !== undefined && { url: normalizedUrl }),
         ...(parsed.pingIntervalMinutes !== undefined && { pingIntervalMinutes: parsed.pingIntervalMinutes }),
         ...(authHeaderEncrypted !== undefined && { authHeaderEncrypted }),
+        ...(parsed.active !== undefined && {
+          active: parsed.active,
+          ...(parsed.active ? { nextRunAt: new Date() } : {}),
+        }),
       }
 
       const updated = await updateTarget(db, sessionCtx.tenantId, id, updates)
@@ -130,7 +135,10 @@ export async function PATCH(request: Request, ctx: RouteContext) {
           actorUserId: sessionCtx.userId,
           action: AUDIT_ACTIONS.TARGET_UPDATED,
           targetResource: id,
-          metadata: { fields: Object.keys(updates) },
+          metadata: {
+            fields: Object.keys(updates),
+            ...(parsed.active !== undefined && { active: parsed.active }),
+          },
         })
       }
 

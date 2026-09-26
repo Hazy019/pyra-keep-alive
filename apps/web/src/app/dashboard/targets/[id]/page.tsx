@@ -5,7 +5,8 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { getTarget, getRecentPingLogs } from '@/lib/repositories/target.repo'
 import type { PingLog } from '@pyra/db/schema'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Pause } from 'lucide-react'
+import { TargetRowActions, TargetDetailManagement } from '@/components/dashboard/target-actions'
 
 export const metadata: Metadata = { title: 'Target Details' }
 
@@ -46,9 +47,13 @@ export default async function TargetDetailPage({
       pingIntervalMinutes: 1440,
       nextRunAt: new Date(Date.now() + 3600000),
       authHeaderEncrypted: null,
+      active: true,
       createdAt: new Date(),
     }
   }
+
+  const canManage = ctx.role === 'owner' || ctx.role === 'admin' || ctx.role === 'member'
+  const isActive = (target as { active?: boolean }).active ?? true
 
   return (
     <div style={{ maxWidth: 880 }}>
@@ -67,9 +72,15 @@ export default async function TargetDetailPage({
         <div>
           <h4 style={{ marginBottom: 6, wordBreak: 'break-all' }}>{target.url}</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className="badge badge-up">
-              <CheckCircle2 size={12} aria-hidden="true" /> Active Monitoring
-            </span>
+            {isActive ? (
+              <span className="badge badge-up">
+                <CheckCircle2 size={12} aria-hidden="true" /> Active Monitoring
+              </span>
+            ) : (
+              <span className="badge badge-pending">
+                <Pause size={12} aria-hidden="true" /> Monitoring Paused
+              </span>
+            )}
             <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
               Cadence: Every{' '}
               {target.pingIntervalMinutes < 60
@@ -78,6 +89,13 @@ export default async function TargetDetailPage({
             </span>
           </div>
         </div>
+
+        <TargetRowActions
+          targetId={target.id}
+          url={target.url}
+          initialActive={isActive}
+          canManage={canManage}
+        />
       </div>
 
       <div className="grid-3" style={{ gap: 16, marginBottom: 32 }}>
@@ -151,6 +169,13 @@ export default async function TargetDetailPage({
           </div>
         )}
       </div>
+
+      <TargetDetailManagement
+        targetId={target.id}
+        url={target.url}
+        initialActive={isActive}
+        canManage={canManage}
+      />
     </div>
   )
 }

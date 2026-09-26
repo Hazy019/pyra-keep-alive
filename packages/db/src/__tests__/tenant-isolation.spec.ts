@@ -1,15 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { Pool } from '@neondatabase/serverless'
-import { drizzle } from 'drizzle-orm/neon-serverless'
+import { Pool as NeonPool } from '@neondatabase/serverless'
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless'
+import pg from 'pg'
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres'
 import { sql, eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import * as schema from '../schema/index'
 import { targets, tenants, users, memberships } from '../schema/index'
-import { executeWithTenant } from '../with-tenant'
+import { executeWithTenant, ServerlessDb, ServerlessTx } from '../with-tenant'
 
 describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
-  let pool: Pool
-  let db: ReturnType<typeof drizzle<typeof schema>>
+  let pool: { end: () => Promise<void> }
+  let db: ServerlessDb
   let userAId: string
   let userBId: string
   let tenantAId: string
@@ -19,8 +21,19 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
 
   beforeAll(async () => {
     const connectionString = process.env['DATABASE_URL'] ?? ''
-    pool = new Pool({ connectionString })
-    db = drizzle(pool, { schema })
+    const isLocalhost =
+      connectionString.includes('localhost') ||
+      connectionString.includes('127.0.0.1')
+
+    if (isLocalhost) {
+      const pgPool = new pg.Pool({ connectionString, ssl: false })
+      pool = pgPool
+      db = drizzlePg(pgPool, { schema }) as any as ServerlessDb
+    } else {
+      const neonPool = new NeonPool({ connectionString })
+      pool = neonPool
+      db = drizzleNeon(neonPool, { schema })
+    }
 
     userAId = randomUUID()
     userBId = randomUUID()
@@ -131,7 +144,7 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
 
     // Simulation of the onboarding transaction logic executed concurrently in two tabs
     async function simulateOnboardingSubmit(workspaceName: string) {
-      return await db.transaction(async (tx) => {
+      return await db.transaction(async (tx: ServerlessTx) => {
         // Serialize concurrent onboarding attempts for the same Clerk user ID
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${doubleSubmitUserClerkId}))`)
 
@@ -265,7 +278,7 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
   // Safe empty state on unset tenant context
   // ─────────────────────────────────────────────────────────────────────────────
   it('returns empty results without syntax or cast error when tenant context is unset', async () => {
-    const emptyResult = await db.transaction(async (tx) => {
+    const emptyResult = await db.transaction(async (tx: ServerlessTx) => {
       await tx.execute(sql`SET LOCAL ROLE pyra_app`)
       return await tx.select().from(targets)
     })

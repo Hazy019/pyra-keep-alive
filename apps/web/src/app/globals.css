@@ -294,6 +294,28 @@ a:hover { color: var(--color-secondary); }
   background: var(--color-surface-2);
 }
 
+.btn-danger {
+  background: var(--color-error);
+  color: #FFFFFF;
+  border-color: var(--color-error);
+  font-weight: 500;
+}
+.btn-danger:hover {
+  background: #c53030;
+  border-color: #c53030;
+  color: #FFFFFF;
+}
+
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--color-error);
+  border-color: transparent;
+}
+.btn-danger-ghost:hover {
+  background: rgba(178, 58, 46, 0.12);
+  color: var(--color-error);
+}
+
 /* Magnetic button — JS adds scale/translate, CSS provides the base */
 .btn-magnetic {
   transition:
@@ -631,6 +653,10 @@ a:hover { color: var(--color-secondary); }
 }
 .status-dot.down { background: var(--color-error); }
 .status-dot.pending { background: var(--color-warning); }
+.status-dot.paused {
+  background: var(--color-warning);
+  box-shadow: 0 0 0 2px rgba(181, 106, 21, 0.2);
+}
 
 @keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 0 3px rgba(76, 122, 70, 0.2); }

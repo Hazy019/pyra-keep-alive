@@ -3,6 +3,7 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { listTargets } from '@/lib/repositories/target.repo'
 import AddTargetButton from '@/components/dashboard/add-target-button'
+import { TargetRowActions } from '@/components/dashboard/target-actions'
 import { Lock } from 'lucide-react'
 import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
 import Sparkline from '@/components/dashboard/sparkline'
@@ -52,7 +53,8 @@ export default async function TargetsPage() {
     return { targets: targetsList, recentPingsMap: map }
   })
 
-  const canAdd = ctx.role === 'owner' || ctx.role === 'admin' || ctx.role === 'member'
+  const canManage = ctx.role === 'owner' || ctx.role === 'admin' || ctx.role === 'member'
+  const canAdd = canManage
 
   return (
     <div>
@@ -85,6 +87,7 @@ export default async function TargetsPage() {
             const lastPing = pings[pings.length - 1]
             const isUp = lastPing?.success
             const hasPinged = pings.length > 0
+            const isActive = target.active ?? true
 
             return (
               <div
@@ -93,7 +96,12 @@ export default async function TargetsPage() {
               >
                 {/* Left: Status dot + URL + Details */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
-                  <span className={`status-dot ${hasPinged ? (isUp ? 'up' : 'down') : 'pending'}`} style={{ flexShrink: 0 }} />
+                  <span
+                    className={`status-dot ${
+                      !isActive ? 'paused' : hasPinged ? (isUp ? 'up' : 'down') : 'pending'
+                    }`}
+                    style={{ flexShrink: 0 }}
+                  />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <p
                       style={{
@@ -116,12 +124,18 @@ export default async function TargetsPage() {
                           ? `${target.pingIntervalMinutes}m`
                           : `${Math.round(target.pingIntervalMinutes / 60)}h`}
                       </span>
-                      <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>● Active</span>
+                      {isActive ? (
+                        <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>● Active</span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: 'var(--color-warning, #f59e0b)', fontWeight: 500 }}>
+                          ⏸ Paused
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Right / Meta: Sparkline + Auth + View */}
+                {/* Right / Meta: Sparkline + Auth + Actions */}
                 <div className="target-card-meta" style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                   <Sparkline pings={pings} />
 
@@ -144,13 +158,13 @@ export default async function TargetsPage() {
                     </span>
                   )}
 
-                  <a
-                    href={`/dashboard/targets/${target.id}`}
-                    className="btn btn-secondary btn-sm"
-                    style={{ padding: '6px 12px', fontSize: 12.5 }}
-                  >
-                    View →
-                  </a>
+                  <TargetRowActions
+                    targetId={target.id}
+                    url={target.url}
+                    initialActive={isActive}
+                    canManage={canManage}
+                    viewHref={`/dashboard/targets/${target.id}`}
+                  />
                 </div>
               </div>
             )
