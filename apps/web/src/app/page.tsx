@@ -209,20 +209,23 @@ export default function HomePage() {
           <section className="hero-section" aria-labelledby="hero-title">
             {/* Left: Value prop */}
             <div className="hero-content">
-              <span className="hero-eyebrow">
+              <div className="hero-eyebrow">
                 <span
                   style={{
                     display: 'inline-block',
-                    width: 7,
-                    height: 7,
+                    width: 6,
+                    height: 6,
                     borderRadius: '50%',
-                    background: 'var(--color-accent)',
+                    background: 'var(--color-success)',
+                    boxShadow: '0 0 0 3px rgba(76, 122, 70, 0.2)',
                     animation: 'pulse-green 2s ease-in-out infinite',
                   }}
                   aria-hidden="true"
                 />
-                Reliable keep-alive infrastructure
-              </span>
+                <span>High-Availability Keep-Alive</span>
+                <span style={{ color: 'var(--color-border)', margin: '0 2px' }}>/</span>
+                <span className="hero-eyebrow-accent">Global Edge Pingers</span>
+              </div>
 
               <h1 id="hero-title" className="hero-headline">
                 Your services{' '}

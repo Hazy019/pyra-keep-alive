@@ -45,7 +45,7 @@ export default function TrustedBy() {
             borderRadius: 'var(--radius-xl)',
             boxShadow: 'var(--shadow-overlap)',
             padding: '24px 32px',
-            marginTop: -48,
+            marginTop: -28,
             position: 'relative',
             zIndex: 10,
             marginBottom: 24,

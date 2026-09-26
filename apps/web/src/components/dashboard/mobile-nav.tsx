@@ -14,6 +14,8 @@ import {
   X,
   Plus,
   ShieldCheck,
+  CreditCard,
+  Sparkles,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -21,13 +23,15 @@ const NAV_ITEMS = [
   { href: '/dashboard/targets', label: 'Targets', icon: Target },
   { href: '/dashboard/history', label: 'History', icon: History },
   { href: '/dashboard/team', label: 'Team', icon: Users },
+  { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
-export default function MobileNav() {
+export default function MobileNav({ plan = 'free' }: { plan?: string }) {
   const pathname = usePathname()
   const { user } = useUser()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const isTeam = plan === 'team'
 
   // Auto-close drawer whenever navigation occurs
   useEffect(() => {
@@ -231,8 +235,23 @@ export default function MobileNav() {
                     >
                       Active
                     </span>
-                    <span style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>
-                      Free Tier
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        color: isTeam ? '#DF551F' : 'var(--color-text-dim)',
+                        background: isTeam ? 'rgba(232, 98, 44, 0.12)' : 'var(--color-surface-2)',
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        border: isTeam ? '1px solid rgba(232, 98, 44, 0.3)' : '1px solid var(--color-border)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                    >
+                      {isTeam && <Sparkles size={10} style={{ color: 'var(--color-accent)' }} />}
+                      {isTeam ? 'Team Plan' : 'Free Tier'}
                     </span>
                   </div>
                 </div>

@@ -15,8 +15,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
+  let tenantPlan = 'free'
   try {
-    await getSessionContext()
+    const session = await getSessionContext()
+    if (process.env['DATABASE_URL'] && session.tenantId) {
+      const { db } = await import('@/lib/db')
+      const schema = await import('@pyra/db/schema')
+      const { eq } = await import('drizzle-orm')
+      const tenantRow = await db()
+        .select({ plan: schema.tenants.plan })
+        .from(schema.tenants)
+        .where(eq(schema.tenants.id, session.tenantId))
+        .limit(1)
+      if (tenantRow[0]?.plan) {
+        tenantPlan = tenantRow[0].plan
+      }
+    }
   } catch (err) {
     if (err instanceof AuthError) {
       if (err.statusCode === 401) {
@@ -31,9 +45,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="dashboard-layout">
-      <Sidebar />
+      <Sidebar plan={tenantPlan} />
       <div className="dashboard-main-wrapper">
-        <MobileNav />
+        <MobileNav plan={tenantPlan} />
         <main className="main-content">{children}</main>
       </div>
     </div>

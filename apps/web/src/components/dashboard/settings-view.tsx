@@ -223,13 +223,13 @@ export default function SettingsView({
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 12, color: 'var(--color-text-muted)' }}>
-                <span>Ping interval: <strong>5 minutes</strong></span>
-                <span>History retention: <strong>30 days</strong></span>
-                <span>Alerting: <strong>Email</strong></span>
+                <span>Ping interval: <strong>{plan === 'team' ? '1 minute (Verified)' : '5 minutes'}</strong></span>
+                <span>History retention: <strong>{plan === 'team' ? '90 days' : '30 days'}</strong></span>
+                <span>Alerting: <strong>{plan === 'team' ? 'Slack, Discord & Webhooks' : 'Email'}</strong></span>
               </div>
             </div>
 
-            {/* Upgrade Banner */}
+            {/* Upgrade / Manage Subscription Banner */}
             <div
               style={{
                 background: 'linear-gradient(135deg, rgba(232, 98, 44, 0.06) 0%, rgba(255, 255, 255, 0) 100%), var(--color-surface)',
@@ -247,19 +247,23 @@ export default function SettingsView({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <Sparkles size={16} style={{ color: 'var(--color-accent)' }} />
                   <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)' }}>
-                    Pyra Team Plan ($12 / seat / month)
+                    {plan === 'team'
+                      ? 'Pyra Team Plan ($12 / seat / month)'
+                      : 'Upgrade to Pyra Team ($12 / seat / month)'}
                   </span>
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.4 }}>
-                  Unlock 1-minute ping cadences, up to 50 endpoints, webhook dispatch, and automated Slack notifications.
+                  {plan === 'team'
+                    ? '1-minute ping cadences, 50 endpoints, webhook dispatch, and priority SLAs are currently unlocked.'
+                    : 'Unlock 1-minute ping cadences, up to 50 endpoints, webhook dispatch, and automated Slack notifications.'}
                 </p>
               </div>
               <a
-                href="/sign-up?plan=team"
+                href="/dashboard/billing"
                 className="btn btn-primary btn-sm"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', whiteSpace: 'nowrap' }}
               >
-                <span>Upgrade to Team</span>
+                <span>{plan === 'team' ? 'Manage Subscription' : 'Upgrade to Team'}</span>
                 <ArrowRight size={13} />
               </a>
             </div>

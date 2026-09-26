@@ -527,7 +527,7 @@ a:hover { color: var(--color-secondary); }
 .hero-section {
   position: relative;
   z-index: 1;
-  padding: 64px 20px 32px;
+  padding: 64px 20px 88px;
   max-width: 1140px;
   margin: 0 auto;
   display: grid;
@@ -545,18 +545,22 @@ a:hover { color: var(--color-secondary); }
 }
 
 .hero-eyebrow {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--color-accent);
-  background: var(--color-accent-glow);
-  padding: 4px 12px;
-  border-radius: 100px;
-  border: 1px solid rgba(232, 98, 44, 0.2);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  padding: 5px 13px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(33, 29, 26, 0.05);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+.hero-eyebrow-accent {
+  color: var(--color-accent);
+  font-weight: 600;
 }
 
 .hero-headline {
@@ -782,11 +786,14 @@ a:hover { color: var(--color-secondary); }
   animation: orb-drift-2 14s ease-in-out infinite;
 }
 
-/* ─── Sign-in split screen ───────────────────────────────────────────────── */
+/* ─── Sign-in split screen (Strict One-Frame Architecture) ───────────────── */
 .sign-in-outer {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.05fr 1fr;
 }
 
 .sign-in-brand {
@@ -796,7 +803,8 @@ a:hover { color: var(--color-secondary); }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 40px 48px;
+  height: 100%;
+  padding: clamp(24px, 3vh, 36px) clamp(28px, 3.5vw, 48px);
 }
 .sign-in-brand-orb-1 {
   position: absolute;
@@ -833,7 +841,9 @@ a:hover { color: var(--color-secondary); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 32px;
+  height: 100%;
+  overflow: hidden;
+  padding: clamp(16px, 2.5vh, 32px) clamp(20px, 2.5vw, 36px);
   background: var(--color-bg);
   position: relative;
 }

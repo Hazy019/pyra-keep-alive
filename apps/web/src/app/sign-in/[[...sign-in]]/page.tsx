@@ -34,11 +34,6 @@ const brandFeatures = [
     title: 'Instant failure alerts',
     desc: 'Know the moment your service goes down, not minutes later.',
   },
-  {
-    icon: Activity,
-    title: '99.99% uptime proven',
-    desc: 'Over 14 million pings dispatched across modern cloud platforms.',
-  },
 ]
 
 export default async function SignInPage(props: {
@@ -101,7 +96,7 @@ export default async function SignInPage(props: {
         </div>
 
         {/* Middle: Main brand content */}
-        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 0' }}>
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(12px, 2vh, 24px) 0' }}>
           {/* Live status badge */}
           <div
             style={{
@@ -111,12 +106,13 @@ export default async function SignInPage(props: {
               background: 'rgba(76,122,70,0.15)',
               border: '1px solid rgba(76,122,70,0.3)',
               borderRadius: 100,
-              padding: '4px 14px',
-              fontSize: 12,
+              padding: '3px 12px',
+              fontSize: 11.5,
               fontWeight: 600,
               color: '#7CC87A',
-              marginBottom: 28,
-              letterSpacing: '0.04em',
+              marginBottom: 16,
+              letterSpacing: '0.03em',
+              alignSelf: 'flex-start',
             }}
           >
             <span
@@ -133,8 +129,8 @@ export default async function SignInPage(props: {
           <h2
             style={{
               color: 'var(--color-text-on-dark)',
-              fontSize: 'clamp(1.8rem, 3vw, 2.4rem)',
-              marginBottom: 16,
+              fontSize: 'clamp(1.5rem, 2.4vw, 2.1rem)',
+              marginBottom: 10,
               lineHeight: 1.15,
               letterSpacing: '-0.02em',
             }}
@@ -144,18 +140,18 @@ export default async function SignInPage(props: {
             around the clock.
           </h2>
 
-          <p style={{ color: 'rgba(245,240,235,0.6)', fontSize: 15, lineHeight: 1.65, marginBottom: 40, maxWidth: 380 }}>
+          <p style={{ color: 'rgba(245,240,235,0.6)', fontSize: 13.5, lineHeight: 1.5, marginBottom: 20, maxWidth: 360 }}>
             Pyra pings your endpoints on schedule — no cold starts, no sleep modes, no forgotten cron jobs.
           </p>
 
           {/* Feature list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {brandFeatures.map(({ icon: Icon, title, desc }) => (
-              <div key={title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <div key={title} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <div
                   style={{
-                    width: 36, height: 36,
-                    borderRadius: 'var(--radius-md)',
+                    width: 32, height: 32,
+                    borderRadius: 'var(--radius-sm)',
                     background: 'rgba(232,98,44,0.15)',
                     border: '1px solid rgba(232,98,44,0.25)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -163,13 +159,13 @@ export default async function SignInPage(props: {
                     flexShrink: 0,
                   }}
                 >
-                  <Icon size={17} aria-hidden="true" />
+                  <Icon size={15} aria-hidden="true" />
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-on-dark)', marginBottom: 2 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-on-dark)' }}>
                     {title}
                   </div>
-                  <div style={{ fontSize: 13, color: 'rgba(245,240,235,0.5)', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(245,240,235,0.5)', lineHeight: 1.4 }}>
                     {desc}
                   </div>
                 </div>
@@ -237,20 +233,20 @@ export default async function SignInPage(props: {
           </div>
 
           {/* Header text */}
-          <div style={{ marginBottom: 28 }}>
+          <div style={{ marginBottom: 16 }}>
             <h1
               style={{
                 fontFamily: 'var(--font-heading)',
-                fontSize: 'clamp(1.5rem, 3vw, 1.9rem)',
+                fontSize: 'clamp(1.4rem, 2.5vw, 1.75rem)',
                 fontWeight: 700,
                 color: 'var(--color-text)',
-                marginBottom: 8,
+                marginBottom: 4,
                 letterSpacing: '-0.02em',
               }}
             >
               Welcome back
             </h1>
-            <p style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
+            <p style={{ fontSize: 13.5, color: 'var(--color-text-muted)', margin: 0 }}>
               Sign in to your keep-alive workspace
             </p>
           </div>
@@ -261,7 +257,7 @@ export default async function SignInPage(props: {
                 <div
                   style={{
                     width: '100%',
-                    minHeight: 420,
+                    minHeight: 380,
                     borderRadius: '16px',
                     border: '1px solid var(--color-border)',
                     background: 'var(--color-surface)',
@@ -271,7 +267,7 @@ export default async function SignInPage(props: {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 14,
-                    padding: '32px 24px',
+                    padding: '24px 20px',
                   }}
                 >
                   <Loader2 size={28} className="spin" style={{ color: 'var(--color-accent)' }} />
@@ -300,10 +296,15 @@ export default async function SignInPage(props: {
                         fontFamily: 'var(--font-body)',
                       },
                       elements: {
+                        rootBox: { width: '100%', margin: '0 auto' },
                         card: {
-                          border: '1px solid #E7DFD6',
-                          boxShadow: '0 8px 32px rgba(33, 29, 26, 0.10)',
+                          border: '1px solid var(--color-border, #E7DFD6)',
+                          boxShadow: '0 8px 32px rgba(33, 29, 26, 0.08)',
                           borderRadius: '16px',
+                          padding: '24px 28px',
+                        },
+                        header: {
+                          display: 'none',
                         },
                         formButtonPrimary: {
                           backgroundColor: '#E8622C',
@@ -389,13 +390,15 @@ export default async function SignInPage(props: {
             </div>
           )}
 
-          {/* Footer link */}
-          <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--color-text-dim)', marginTop: 24 }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/sign-up" style={{ color: 'var(--color-accent)', fontWeight: 500 }}>
-              Sign up free
-            </Link>
-          </p>
+          {/* Footer link only if Clerk is not configured */}
+          {!isConfigured && (
+            <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--color-text-dim)', marginTop: 20 }}>
+              Don&apos;t have an account?{' '}
+              <Link href="/sign-up" style={{ color: 'var(--color-accent)', fontWeight: 500 }}>
+                Sign up free
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </main>

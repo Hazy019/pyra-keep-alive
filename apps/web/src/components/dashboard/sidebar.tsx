@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton, useUser } from '@clerk/nextjs'
-import { Activity, Target, History, Users, Settings, ChevronsUpDown } from 'lucide-react'
+import { Activity, Target, History, Users, Settings, CreditCard, ChevronsUpDown, Sparkles } from 'lucide-react'
 import PyraLogo from '@/components/pyra-logo'
 
 const NAV_ITEMS = [
@@ -11,10 +11,11 @@ const NAV_ITEMS = [
   { href: '/dashboard/targets', label: 'Targets', icon: Target },
   { href: '/dashboard/history', label: 'History', icon: History },
   { href: '/dashboard/team', label: 'Team', icon: Users },
+  { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ plan = 'free' }: { plan?: string }) {
   const pathname = usePathname()
   const { user } = useUser()
 
@@ -26,6 +27,7 @@ export default function Sidebar() {
         : 'Pyra Workspace'
 
   const monogramLetter = (workspaceName.charAt(0) || 'P').toUpperCase()
+  const isTeam = plan === 'team'
 
   return (
     <aside className="sidebar">
@@ -87,13 +89,13 @@ export default function Sidebar() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              marginTop: 2,
+              gap: 5,
+              marginTop: 3,
             }}
           >
             <span
               style={{
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: 600,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
@@ -105,6 +107,25 @@ export default function Sidebar() {
               }}
             >
               Active
+            </span>
+            <span
+              style={{
+                fontSize: 9.5,
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                color: isTeam ? '#DF551F' : 'var(--color-text-dim)',
+                background: isTeam ? 'rgba(232, 98, 44, 0.12)' : 'var(--color-surface-2)',
+                padding: '1px 5px',
+                borderRadius: 4,
+                border: isTeam ? '1px solid rgba(232, 98, 44, 0.3)' : '1px solid var(--color-border)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              {isTeam && <Sparkles size={8.5} style={{ color: 'var(--color-accent)' }} />}
+              {isTeam ? 'Team' : 'Free'}
             </span>
           </div>
         </div>

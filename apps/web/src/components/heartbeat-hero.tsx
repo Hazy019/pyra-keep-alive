@@ -1,287 +1,246 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useId } from 'react'
 
 /**
- * Heartbeat Hero — Continuous ECG Telemetry Wave
+ * Heartbeat Hero — Precision Oscilloscope Telemetry Monitor
  *
- * Implements an authentic, continuously scrolling vitals monitor:
- * 1. Motion never stops: ECG waveform scrolls continuously via direct DOM transforms in requestAnimationFrame (0 React re-renders).
- * 2. Rare flatline-and-recovery accent: Every 24–42 seconds (randomized), a transient flatline occurs for ~2.5s,
- *    an ember beacon sparks and re-ignites the pulse signal, returning to steady-state ECG monitoring.
- * 3. Accessibility: Respects prefers-reduced-motion by rendering a crisp, static beat.
+ * Motion & Physics Architecture:
+ * 1. Constant Horizontal Timebase: In cardiac monitors and oscilloscopes, the timebase
+ *    sweeps horizontally at a steady speed (x = progress * width). The beam never lags
+ *    or stalls on peaks.
+ * 2. Instantaneous Vertical Tracking: y(t) is calculated via continuous piecewise
+ *    interpolation at exact coordinate x, dynamically riding the QRS peaks and dips.
+ * 3. Zero-Desync Optical Mask: An SVG alpha mask is pinned to [headX - TRAIL_WIDTH, headX].
+ *    The illuminated wave terminates precisely at headX. It is physically impossible
+ *    for the line to outrun the beacon.
+ * 4. Phosphor Decay: The trailing stroke softly dissolves toward the tail (0% to 100% opacity)
+ *    mirroring real oscilloscope phosphor persistence.
  */
 
-const UNIT_WIDTH = 180
-const CANVAS_WIDTH = 600
-const CANVAS_HEIGHT = 80
-const MID_Y = CANVAS_HEIGHT / 2
-const SCROLL_SPEED = 75 // pixels per second
-
-// Normalized ECG profile within a single 180px unit
-// x offset (0-180), y displacement from baseline (positive = up, negative = down)
-const ECG_UNIT_POINTS: [number, number][] = [
-  [0, 0],
-  [25, 0],
-  // P-wave
-  [33, 3],
-  [40, 5],
-  [47, 0],
-  [60, 0],
-  // Q-dip
-  [65, -5],
-  // R-peak (high amplitude heartbeat spike)
-  [73, 30],
-  // S-dip (deep deflection)
-  [81, -16],
-  [88, 0],
-  // ST-segment
+const BEAT_POINTS = [
+  [0, 0], [10, 0], [13, -2], [15, 0],
+  [20, 0], [22, -15], [24, 35], [26, -10], [28, 0],
+  [35, 0], [38, -2], [40, 0],
+  [50, 0], [52, -15], [54, 35], [56, -10], [58, 0],
+  [65, 0], [68, -2], [70, 0],
   [100, 0],
-  // T-wave
-  [110, 6],
-  [120, 8],
-  [130, 0],
-  [180, 0],
-]
+] as const
 
-function generateContinuousEcgPath(numUnits: number): string {
-  const points: [number, number][] = []
-
-  for (let u = 0; u < numUnits; u++) {
-    const xBase = u * UNIT_WIDTH
-    for (const [x, y] of ECG_UNIT_POINTS) {
-      points.push([xBase + x, MID_Y - y])
-    }
-  }
-
-  return points
-    .map(([px, py], i) => `${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`)
-    .join(' ')
-}
-
-// 5 units = 900px, guarantees seamless coverage for 600px canvas across 180px wrapping
-const ECG_CONTINUOUS_PATH = generateContinuousEcgPath(5)
-
-// Static reduced-motion single beat path
-const STATIC_ECG_PATH = pointsToPathCentered([
-  [0, 0],
-  [40, 0],
-  [46, 3],
-  [50, 0],
-  [53, -5],
-  [58, 30],
-  [63, -16],
-  [68, 0],
-  [76, 7],
-  [84, 0],
-  [100, 0],
-], CANVAS_WIDTH, CANVAS_HEIGHT)
-
-function pointsToPathCentered(points: [number, number][], width: number, height: number): string {
+function pointsToPath(width: number, height: number): string {
   const midY = height / 2
   const scaleX = width / 100
-  return points
+  const scaleY = height / 80
+
+  return BEAT_POINTS
     .map(([x, y], i) => {
       const px = x * scaleX
-      const py = midY - y
+      const py = midY - y * scaleY
       return `${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
     })
     .join(' ')
 }
 
+function getYAtX(currX: number, width: number, height: number): number {
+  const midY = height / 2
+  const scaleY = height / 80
+  const pctX = Math.max(0, Math.min(100, (currX / width) * 100))
+
+  for (let i = 0; i < BEAT_POINTS.length - 1; i++) {
+    const p1 = BEAT_POINTS[i]
+    const p2 = BEAT_POINTS[i + 1]
+    if (!p1 || !p2) continue
+
+    if (pctX >= p1[0] && pctX <= p2[0]) {
+      const span = p2[0] - p1[0]
+      const t = span === 0 ? 0 : (pctX - p1[0]) / span
+      const yVal = p1[1] + t * (p2[1] - p1[1])
+      return midY - yVal * scaleY
+    }
+  }
+
+  return midY
+}
+
 export default function HeartbeatHero() {
-  const waveGroupRef = useRef<SVGGElement>(null)
-  const flatlineRef = useRef<SVGLineElement>(null)
-  const sparkGroupRef = useRef<SVGGElement>(null)
-  const sparkDotRef = useRef<SVGCircleElement>(null)
-  const sparkTrailRef = useRef<SVGPathElement>(null)
-  const sparkRingRef = useRef<SVGCircleElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const emberDotRef = useRef<SVGCircleElement>(null)
+  const emberGlowRef = useRef<SVGCircleElement>(null)
+  const maskRectRef = useRef<SVGRectElement>(null)
+  const pulseGroupRef = useRef<SVGGElement>(null)
+
+  const rawId = useId()
+  const cleanId = rawId.replace(/:/g, '_')
+  const maskId = `pulse_mask_${cleanId}`
+  const gradId = `pulse_grad_${cleanId}`
+
+  const canvasW = 600
+  const canvasH = 80
+  const midY = canvasH / 2
+
+  const [pathD, setPathD] = useState('')
 
   useEffect(() => {
-    // 1. Accessibility guard: prefers-reduced-motion displays static wave without loop
+    setPathD(pointsToPath(canvasW, canvasH))
+  }, [canvasW, canvasH])
+
+  useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) return
 
-    let animFrame: number
-    let lastTime = performance.now()
-    let scrollPos = 0
+    const dot = emberDotRef.current
+    const glow = emberGlowRef.current
+    const maskRect = maskRectRef.current
+    const group = pulseGroupRef.current
 
-    // Schedule the first rare incident (between 24s and 42s)
-    const getRandomInterval = () => (24 + Math.random() * 18) * 1000
-    let nextIncidentTime = lastTime + getRandomInterval()
-    let incidentState: 'idle' | 'flatlining' | 'recovering' = 'idle'
-    let incidentStartTime = 0
-    const INCIDENT_DURATION = 2800 // Total transient duration (flatline + ember reignition)
+    if (!dot || !glow || !maskRect || !group) return
+
+    const TRAIL_WIDTH = 130 // Optical trail width in pixels
+    const SWEEP_DURATION = 2300 // 2.3s steady horizontal sweep
+    const CYCLE_DURATION = 3500 // 3.5s total (2.3s sweep + 1.2s rest)
+
+    let animId: number
+    const startTime = performance.now()
 
     function loop(now: number) {
-      const dt = Math.min(100, now - lastTime) // Clamp delta to avoid large jump on tab focus
-      lastTime = now
+      if (!dot || !glow || !maskRect || !group) return
 
-      // Check if time to trigger rare incident
-      if (incidentState === 'idle' && now >= nextIncidentTime) {
-        incidentState = 'flatlining'
-        incidentStartTime = now
-      }
+      const elapsed = (now - startTime) % CYCLE_DURATION
+      const sweepProgress = Math.min(1, elapsed / SWEEP_DURATION)
 
-      if (incidentState === 'idle') {
-        // Normal continuous ECG telemetry scroll
-        scrollPos = (scrollPos + (SCROLL_SPEED * dt) / 1000) % UNIT_WIDTH
-        if (waveGroupRef.current) {
-          waveGroupRef.current.style.transform = `translate3d(-${scrollPos.toFixed(2)}px, 0, 0)`
-          waveGroupRef.current.style.opacity = '1'
-        }
-        if (flatlineRef.current) {
-          flatlineRef.current.style.opacity = '0'
-        }
-        if (sparkGroupRef.current) {
-          sparkGroupRef.current.style.display = 'none'
-        }
+      if (sweepProgress < 1) {
+        // Active pulse sweep: steady horizontal velocity
+        group.style.opacity = '1'
+
+        const headX = sweepProgress * canvasW
+        const headY = getYAtX(headX, canvasW, canvasH)
+
+        // Lock beacon precisely to (headX, headY)
+        dot.setAttribute('cx', headX.toFixed(1))
+        dot.setAttribute('cy', headY.toFixed(1))
+
+        glow.setAttribute('cx', headX.toFixed(1))
+        glow.setAttribute('cy', headY.toFixed(1))
+
+        // Dynamic peak flare: halo expands as the beacon crests the QRS spikes
+        const peakDeflection = Math.abs(headY - midY)
+        const glowRadius = 7 + (peakDeflection / 35) * 5
+        const glowOpacity = 0.35 + (peakDeflection / 35) * 0.45
+        glow.setAttribute('r', glowRadius.toFixed(1))
+        glow.setAttribute('opacity', glowOpacity.toFixed(2))
+
+        // Position optical trail mask strictly ending at headX
+        const clipX = Math.max(0, headX - TRAIL_WIDTH)
+        const clipW = headX - clipX
+        maskRect.setAttribute('x', clipX.toFixed(1))
+        maskRect.setAttribute('width', clipW.toFixed(1))
       } else {
-        // Rare flatline accent & recovery sequence
-        const progress = Math.min(1, (now - incidentStartTime) / INCIDENT_DURATION)
-
-        if (progress < 0.45) {
-          // Transition into flatline
-          const fade = progress / 0.45
-          if (waveGroupRef.current) {
-            waveGroupRef.current.style.opacity = `${(1 - fade).toFixed(3)}`
-          }
-          if (flatlineRef.current) {
-            flatlineRef.current.style.opacity = `${(fade * 0.9).toFixed(3)}`
-          }
-          if (sparkGroupRef.current) {
-            sparkGroupRef.current.style.display = 'none'
-          }
-        } else if (progress < 0.85) {
-          // Ember beacon sweeps across to reignite signal
-          const sparkProgress = (progress - 0.45) / 0.40
-          const emberX = sparkProgress * (CANVAS_WIDTH + 80) - 20
-
-          if (waveGroupRef.current) {
-            waveGroupRef.current.style.opacity = '0'
-          }
-          if (flatlineRef.current) {
-            flatlineRef.current.style.opacity = '0.9'
-          }
-          if (sparkGroupRef.current) {
-            sparkGroupRef.current.style.display = 'block'
-          }
-          if (sparkDotRef.current) {
-            sparkDotRef.current.setAttribute('cx', emberX.toFixed(1))
-          }
-          if (sparkRingRef.current) {
-            sparkRingRef.current.setAttribute('cx', emberX.toFixed(1))
-          }
-          if (sparkTrailRef.current) {
-            const startX = Math.max(0, emberX - 70)
-            sparkTrailRef.current.setAttribute('d', `M ${startX} ${MID_Y} L ${emberX} ${MID_Y}`)
-          }
-        } else {
-          // Signal re-ignited: ECG returns to full amplitude
-          const recoverProgress = (progress - 0.85) / 0.15
-          if (sparkGroupRef.current) {
-            sparkGroupRef.current.style.display = 'none'
-          }
-          if (flatlineRef.current) {
-            flatlineRef.current.style.opacity = `${(1 - recoverProgress) * 0.9}`
-          }
-          if (waveGroupRef.current) {
-            waveGroupRef.current.style.opacity = `${recoverProgress.toFixed(3)}`
-          }
-
-          if (progress >= 1) {
-            incidentState = 'idle'
-            nextIncidentTime = now + getRandomInterval()
-          }
-        }
+        // Diastole resting breath: gentle decay before next pulse
+        const restProgress = (elapsed - SWEEP_DURATION) / (CYCLE_DURATION - SWEEP_DURATION)
+        const fadeOut = Math.max(0, 1 - restProgress * 3.5)
+        group.style.opacity = `${fadeOut.toFixed(2)}`
       }
 
-      animFrame = requestAnimationFrame(loop)
+      animId = requestAnimationFrame(loop)
     }
 
-    animFrame = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(animFrame)
-  }, [])
+    animId = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(animId)
+  }, [pathD, canvasW, canvasH, midY])
 
   return (
-    <div className="heartbeat-container" style={{ position: 'relative', overflow: 'hidden' }}>
-      {/* Screen reader accessible description */}
+    <div className="heartbeat-container" style={{ position: 'relative' }}>
       <span className="sr-only">
-        Real-time system pulse monitor showing active continuous endpoint heartbeat signal and uptime telemetry.
+        Real-time telemetry pulse monitor tracing active endpoint heartbeat signals with zero latency.
       </span>
 
       <svg
-        viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}
+        ref={svgRef}
+        viewBox={`0 0 ${canvasW} ${canvasH}`}
         className="heartbeat-svg"
         aria-hidden="true"
         focusable="false"
       >
-        {/* Isoelectric background grid datum line */}
+        <defs>
+          {/* Luminous decay gradient for trail */}
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="35%" stopColor="#FFFFFF" stopOpacity="0.3" />
+            <stop offset="85%" stopColor="#FFFFFF" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="1" />
+          </linearGradient>
+
+          {/* Optical tracking mask: guarantees stroke ends exactly at beacon head */}
+          <mask id={maskId}>
+            <rect x="0" y="0" width={canvasW} height={canvasH} fill="#000000" />
+            <rect
+              ref={maskRectRef}
+              x="0"
+              y="0"
+              width="0"
+              height={canvasH}
+              fill={`url(#${gradId})`}
+            />
+          </mask>
+        </defs>
+
+        {/* Subtle architectural datum baseline */}
         <line
           x1="0"
-          y1={MID_Y}
-          x2={CANVAS_WIDTH}
-          y2={MID_Y}
+          y1={midY}
+          x2={canvasW}
+          y2={midY}
           stroke="var(--color-border)"
           strokeWidth="1"
           strokeDasharray="4 4"
-          opacity="0.6"
+          opacity="0.5"
         />
 
-        {/* Transient flatline during rare recovery accent */}
-        <line
-          ref={flatlineRef}
-          x1="0"
-          y1={MID_Y}
-          x2={CANVAS_WIDTH}
-          y2={MID_Y}
-          stroke="var(--color-border)"
-          strokeWidth="1.5"
-          opacity="0"
-          style={{ transition: 'opacity 0.2s ease' }}
+        {/* 1. Underlying Resting Waveform — subtle spatial depth */}
+        <path
+          d={pathD}
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.22"
+          style={{ vectorEffect: 'non-scaling-stroke' }}
         />
 
-        {/* Continuously scrolling ECG wave group */}
-        <g ref={waveGroupRef} style={{ willChange: 'transform' }}>
+        {/* 2. Active Luminous Pulse Layer — revealed by precision tracking mask */}
+        <g ref={pulseGroupRef} style={{ opacity: 0 }}>
           <path
-            d={ECG_CONTINUOUS_PATH}
-            className="heartbeat-line"
+            d={pathD}
+            fill="none"
+            stroke="var(--color-accent)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            mask={`url(#${maskId})`}
             style={{
+              filter: 'drop-shadow(0 0 6px rgba(232, 98, 44, 0.75))',
               vectorEffect: 'non-scaling-stroke',
             }}
           />
-        </g>
 
-        {/* Static fallback for reduced motion users */}
-        <path
-          d={STATIC_ECG_PATH}
-          className="heartbeat-line"
-          style={{
-            display: 'none',
-          }}
-          data-reduced-motion-fallback
-        />
-
-        {/* Ember spark & beacon group for rare reignition moments */}
-        <g ref={sparkGroupRef} style={{ display: 'none' }}>
-          <path
-            ref={sparkTrailRef}
-            d={`M 0 ${MID_Y} L 0 ${MID_Y}`}
-            stroke="var(--color-accent)"
-            strokeWidth="2.5"
-            opacity="0.4"
-            strokeLinecap="round"
-          />
-          <circle ref={sparkDotRef} cx="0" cy={MID_Y} r="4" className="ember-dot" />
+          {/* 3. Traveling Ember Beacon (rides x, y along the actual peaks) */}
           <circle
-            ref={sparkRingRef}
+            ref={emberGlowRef}
             cx="0"
-            cy={MID_Y}
+            cy={midY}
             r="8"
             fill="none"
             stroke="var(--color-accent)"
             strokeWidth="1.5"
-            opacity="0.35"
+            opacity="0.4"
+          />
+          <circle
+            ref={emberDotRef}
+            cx="0"
+            cy={midY}
+            r="3.5"
+            className="ember-dot"
           />
         </g>
       </svg>
