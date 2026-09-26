@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
-  <!-- Sleek dark squircle container ensures 100% legibility on light and dark browser chrome -->
+  <!-- Sleek dark squircle container ensures high visibility on both light and dark browser tabs -->
   <rect width="32" height="32" rx="7" fill="#12151B"/>
   
   <!-- Glowing Apex Beacon Dot (Pyra Ember) -->

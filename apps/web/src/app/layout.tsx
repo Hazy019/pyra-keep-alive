@@ -67,7 +67,7 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: 'any' },
     ],
     shortcut: '/favicon.svg',
-    apple: '/Pyra-logo.png',
+    apple: '/apple-touch-icon.png',
   },
   alternates: {
     canonical: siteUrl,
