@@ -74,8 +74,23 @@ export async function POST(request: Request) {
     // 1. Strict input validation
     const parsed = createTargetSchema.parse(body)
 
+    // Normalize URL: auto-target /rest/v1/ for bare Supabase project URLs
+    let normalizedUrl = parsed.url.trim()
+    try {
+      const u = new URL(normalizedUrl)
+        if (
+          (u.hostname.endsWith('.supabase.co') || u.hostname.endsWith('.supabase.in')) &&
+          (u.pathname === '' || u.pathname === '/')
+        ) {
+          u.pathname = '/rest/v1/'
+          normalizedUrl = u.toString()
+        }
+    } catch (_err) {
+      // Fallback to original url if parsing fails
+    }
+
     // 2. SSRF validation — also returns resolved IPs for DNS-pinning context
-    await validateTargetUrl(parsed.url)
+    await validateTargetUrl(normalizedUrl)
 
     // 3. Plan limit check (in a transaction to prevent race conditions)
     return await withTenant(ctx.tenantId, async (db) => {
@@ -109,9 +124,10 @@ export async function POST(request: Request) {
 
       // 4. Encrypt auth header if provided
       let authHeaderEncrypted: Buffer | null = null
-      if (parsed.authHeader) {
+      const cleanAuth = parsed.authHeader?.trim()
+      if (cleanAuth) {
         const { encryptAuthHeader } = await import('@/lib/crypto')
-        authHeaderEncrypted = Buffer.from(encryptAuthHeader(parsed.authHeader), 'base64')
+        authHeaderEncrypted = Buffer.from(encryptAuthHeader(cleanAuth), 'base64')
       }
 
       // 5. Generate verification token
@@ -120,7 +136,7 @@ export async function POST(request: Request) {
       // 6. Create target (ready and active immediately, zero hassle)
       const target = await createTarget(db, {
         tenantId: ctx.tenantId,
-        url: parsed.url,
+        url: normalizedUrl,
         authHeaderEncrypted,
         verified: true,
         verificationToken,
@@ -134,7 +150,7 @@ export async function POST(request: Request) {
         actorUserId: ctx.userId,
         action: AUDIT_ACTIONS.TARGET_CREATED,
         targetResource: target.id,
-        metadata: { url: parsed.url, pingIntervalMinutes: requestedInterval },
+        metadata: { url: normalizedUrl, pingIntervalMinutes: requestedInterval },
       })
 
       return NextResponse.json(

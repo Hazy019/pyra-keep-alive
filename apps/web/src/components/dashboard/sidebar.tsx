@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton, useUser } from '@clerk/nextjs'
 import { Activity, Target, History, Users, Settings, ChevronsUpDown } from 'lucide-react'
+import PyraLogo from '@/components/pyra-logo'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', icon: Activity },
@@ -30,7 +31,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Logo */}
       <Link href="/" className="sidebar-logo" style={{ textDecoration: 'none' }}>
-        <span>Pyr<span className="logo-ember">a</span></span>
+        <PyraLogo size={24} />
       </Link>
 
       {/* Workspace Identity Block */}

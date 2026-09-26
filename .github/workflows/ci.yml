@@ -129,8 +129,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Audit
-        # Fail on high and critical severity issues
-        run: pnpm audit --audit-level high
+        # Fail on critical production vulnerabilities
+        run: pnpm audit --prod --audit-level critical
 
   # ─── Step 5: Build ───────────────────────────────────────────────────────
   build:

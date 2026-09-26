@@ -7,11 +7,8 @@ import {
   Copy,
   Check,
   Database,
-  Lock,
   Server,
   Zap,
-  Bell,
-  ExternalLink,
   Shield,
   Layers,
   ArrowRight,
@@ -31,10 +28,9 @@ export default function SettingsView({
   targetCount,
 }: SettingsViewProps) {
   const [copied, setCopied] = useState(false)
-  const [activeTab, setActiveTab] = useState<'general' | 'subscription' | 'security'>('general')
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(tenantId)
+    void navigator.clipboard.writeText(tenantId)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }

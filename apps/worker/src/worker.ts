@@ -27,6 +27,71 @@ import { Agent, fetch as undiciFetch } from 'undici'
 const PING_TIMEOUT_MS = Number(process.env['PING_TIMEOUT_MS'] ?? 10_000)
 const FAILURE_ALERT_THRESHOLD = Number(process.env['FAILURE_ALERT_THRESHOLD'] ?? 3)
 
+export function normalizePingUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    const isSupabase =
+      parsed.hostname.endsWith('.supabase.co') ||
+      parsed.hostname.endsWith('.supabase.in')
+
+    if (isSupabase && (parsed.pathname === '/' || parsed.pathname === '')) {
+      parsed.pathname = '/rest/v1/'
+      return parsed.toString()
+    }
+    return url
+  } catch (_err) {
+    return url
+  }
+}
+
+export function buildPingHeaders(url: string, decryptedAuthHeader?: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    'User-Agent': 'Pyra-KeepAlive/1.0 (+https://pyra.dev)',
+  }
+
+  let isSupabase = false
+  try {
+    const parsed = new URL(url)
+    isSupabase =
+      parsed.hostname.endsWith('.supabase.co') ||
+      parsed.hostname.endsWith('.supabase.in')
+  } catch (_err) {
+    // Non-parseable URL fallback
+  }
+
+  if (isSupabase) {
+    headers['Accept'] = 'application/json'
+  }
+
+  if (!decryptedAuthHeader) {
+    return headers
+  }
+
+  const trimmed = decryptedAuthHeader.trim()
+  if (!trimmed) {
+    return headers
+  }
+
+  const rawToken = trimmed.replace(/^Bearer\s+/i, '').trim()
+  const isJwt = rawToken.startsWith('eyJ')
+
+  if (isSupabase || isJwt) {
+    // Supabase Kong API gateway strictly mandates the `apikey` header.
+    // PostgREST also requires `Authorization: Bearer <anon_key>`.
+    headers['apikey'] = rawToken
+    headers['Authorization'] = `Bearer ${rawToken}`
+  } else {
+    // Standard target
+    const formattedAuth =
+      trimmed.startsWith('Bearer ') || trimmed.startsWith('Basic ')
+        ? trimmed
+        : `Bearer ${trimmed}`
+    headers['Authorization'] = formattedAuth
+  }
+
+  return headers
+}
+
 export function createPingWorker(db: Db, redis: Redis) {
   const notificationQueue = new Queue<NotificationPayload>('notifications', { connection: redis })
 
@@ -37,16 +102,19 @@ export function createPingWorker(db: Db, redis: Redis) {
       const log = jobLogger(job.id ?? 'unknown', targetId, tenantId)
       const ranAt = new Date()
 
-      log.info({ event: 'ping.start', url }, 'Starting ping')
+      // Normalize destination URL (e.g. Supabase root -> /rest/v1/)
+      const targetUrl = normalizePingUrl(url)
+
+      log.info({ event: 'ping.start', url: targetUrl }, 'Starting ping')
 
       // 1. SSRF re-validate (DNS-pinning at execution time)
       let resolvedIps: string[]
       try {
-        const validated = await validateTargetUrl(url)
+        const validated = await validateTargetUrl(targetUrl)
         resolvedIps = validated.resolvedIps
       } catch (err) {
         if (err instanceof SsrfError) {
-          log.warn({ event: 'ping.ssrf_rejected', url, reason: err.message }, 'SSRF check failed at execution time')
+          log.warn({ event: 'ping.ssrf_rejected', url: targetUrl, reason: err.message }, 'SSRF check failed at execution time')
           // Don't retry SSRF-rejected targets — they won't improve
           await writePingLog(db, { targetId, tenantId, success: false, errorMessage: `SSRF: ${err.message}`, ranAt })
           return // throw would trigger retry; return completes the job
@@ -54,20 +122,20 @@ export function createPingWorker(db: Db, redis: Redis) {
         throw err
       }
 
-      // 2. Decrypt auth header if present
-      let headers: Record<string, string> = {
-        'User-Agent': 'Pyra-KeepAlive/1.0 (+https://pyra.dev)',
-      }
+      // 2. Decrypt auth header if present and build headers (handles Supabase apikey + Bearer)
+      let headers: Record<string, string>
       if (authHeaderEncrypted) {
         try {
           const decrypted = await decryptAuthHeader(authHeaderEncrypted)
-          headers = { ...headers, Authorization: decrypted }
+          headers = buildPingHeaders(targetUrl, decrypted)
         } catch (err) {
           log.error({ event: 'ping.decrypt_failed', err }, 'Failed to decrypt auth header')
           // Decryption failure = credential issue, not transient; complete without retry
           await writePingLog(db, { targetId, tenantId, success: false, errorMessage: 'Auth header decryption failed', ranAt })
           return
         }
+      } else {
+        headers = buildPingHeaders(targetUrl, null)
       }
 
       // 3. Execute HTTP ping — bind to the pinned IP via undici Agent to prevent DNS-rebinding
@@ -96,7 +164,7 @@ export function createPingWorker(db: Db, redis: Redis) {
       const timeout = setTimeout(() => controller.abort(), PING_TIMEOUT_MS)
 
       try {
-        const response = await undiciFetch(url, {
+        const response = await undiciFetch(targetUrl, {
           method: 'GET',
           headers,
           redirect: 'manual',

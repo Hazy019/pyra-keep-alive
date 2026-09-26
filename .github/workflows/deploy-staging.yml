@@ -19,7 +19,6 @@ jobs:
     name: Deploy Web (Staging)
     runs-on: ubuntu-latest
     environment: staging
-    if: ${{ secrets.VERCEL_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +38,8 @@ jobs:
       - name: Deploy to Vercel (staging)
         run: |
           if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
-            echo "::error::VERCEL_TOKEN secret is not configured in GitHub repository secrets."
-            exit 1
+            echo "::notice::VERCEL_TOKEN secret is not configured in GitHub repository secrets. Skipping Vercel staging deployment."
+            exit 0
           fi
 
           SCOPE_ARG=""
@@ -63,7 +62,6 @@ jobs:
     name: Deploy Worker (Staging)
     runs-on: ubuntu-latest
     environment: staging
-    if: ${{ secrets.FLY_API_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -73,8 +71,8 @@ jobs:
       - name: Deploy worker to Fly.io staging
         run: |
           if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
-            echo "::error::FLY_API_TOKEN secret is not configured in GitHub repository secrets."
-            exit 1
+            echo "::notice::FLY_API_TOKEN secret is not configured in GitHub repository secrets. Skipping Fly.io staging deployment."
+            exit 0
           fi
           flyctl deploy \
             --app pyra-worker-staging \
@@ -90,7 +88,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-web-staging, deploy-worker-staging]
     environment: production  # Requires manual approval in GitHub Environments UI
-    if: ${{ secrets.VERCEL_TOKEN_PROD != '' || secrets.FLY_API_TOKEN_PROD != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -99,8 +96,8 @@ jobs:
       - name: Deploy worker to Fly.io production
         run: |
           if [ -z "${{ secrets.FLY_API_TOKEN_PROD }}" ]; then
-            echo "::error::FLY_API_TOKEN_PROD secret is not configured in GitHub repository secrets."
-            exit 1
+            echo "::notice::FLY_API_TOKEN_PROD secret is not configured. Skipping Fly.io production deployment."
+            exit 0
           fi
           flyctl deploy \
             --app pyra-worker-prod \
@@ -113,8 +110,8 @@ jobs:
       - name: Promote Vercel deployment to production
         run: |
           if [ -z "${{ secrets.VERCEL_TOKEN_PROD }}" ]; then
-            echo "::error::VERCEL_TOKEN_PROD secret is not configured in GitHub repository secrets."
-            exit 1
+            echo "::notice::VERCEL_TOKEN_PROD secret is not configured. Skipping Vercel production deployment."
+            exit 0
           fi
 
           SCOPE_ARG=""

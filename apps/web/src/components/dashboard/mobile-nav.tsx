@@ -13,9 +13,7 @@ import {
   Menu,
   X,
   Plus,
-  ChevronsUpDown,
   ShieldCheck,
-  Zap,
 } from 'lucide-react'
 
 const NAV_ITEMS = [

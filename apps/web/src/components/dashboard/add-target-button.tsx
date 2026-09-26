@@ -21,10 +21,44 @@ export default function AddTargetButton() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const isSupabaseUrl = url.toLowerCase().includes('.supabase.co') || url.toLowerCase().includes('.supabase.in')
+  const isClientEcho = url.toLowerCase().includes('client-echo')
+  const isJwt = authHeader.trim().startsWith('ey')
+
+  function handleUrlBlur() {
+    try {
+      const u = new URL(url.trim())
+      if (
+        (u.hostname.endsWith('.supabase.co') || u.hostname.endsWith('.supabase.in')) &&
+        (u.pathname === '' || u.pathname === '/')
+      ) {
+        u.pathname = '/rest/v1/'
+        setUrl(u.toString())
+      }
+    } catch (_err) {
+      // Fallback if URL is incomplete
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    // Normalize URL if user submitted a bare Supabase project URL
+    let targetUrl = url.trim()
+    try {
+      const u = new URL(targetUrl)
+      if (
+        (u.hostname.endsWith('.supabase.co') || u.hostname.endsWith('.supabase.in')) &&
+        (u.pathname === '' || u.pathname === '/')
+      ) {
+        u.pathname = '/rest/v1/'
+        targetUrl = u.toString()
+      }
+    } catch (_err) {
+      // Fallback if URL is incomplete
+    }
 
     try {
       const response = await fetch('/api/targets', {
@@ -34,8 +68,8 @@ export default function AddTargetButton() {
           'x-csrf-token': getCsrfToken(),
         },
         body: JSON.stringify({
-          url,
-          ...(authHeader ? { authHeader } : {}),
+          url: targetUrl,
+          ...(authHeader.trim() ? { authHeader: authHeader.trim() } : {}),
           pingIntervalMinutes: interval,
         }),
       })
@@ -148,27 +182,57 @@ export default function AddTargetButton() {
                   placeholder="https://myapp.onrender.com/health"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
+                  onBlur={handleUrlBlur}
                   required
                   autoFocus
                 />
               </div>
 
+              {isSupabaseUrl && (
+                <div
+                  style={{
+                    background: 'rgba(232, 98, 44, 0.08)',
+                    border: '1px solid rgba(232, 98, 44, 0.25)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 14px',
+                    fontSize: 12.5,
+                    color: 'var(--color-primary)',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <strong>⚡ Supabase Database Detected</strong>
+                  <div style={{ color: 'var(--color-text-muted)', marginTop: 2 }}>
+                    Pyra will ping PostgREST (<code>/rest/v1/</code>) and automatically send both <code>apikey</code> and <code>Authorization: Bearer</code> headers using your anon key to keep your database active.
+                  </div>
+                </div>
+              )}
+
               <div className="form-group">
                 <label htmlFor="target-auth" className="label">
-                  Auth header{' '}
-                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>(optional)</span>
+                  {isSupabaseUrl || isClientEcho ? 'Supabase Anon Key' : 'Auth header'}{' '}
+                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>
+                    {isSupabaseUrl || isClientEcho ? '(required for Supabase keep-alive)' : '(optional)'}
+                  </span>
                 </label>
                 <input
                   id="target-auth"
                   className="input"
                   type="password"
-                  placeholder="Bearer sk-..."
+                  placeholder={
+                    isSupabaseUrl || isClientEcho
+                      ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                      : 'Bearer sk-... or anon key'
+                  }
                   value={authHeader}
                   onChange={(e) => setAuthHeader(e.target.value)}
                   autoComplete="off"
                 />
-                <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
-                  Stored AES-256-GCM encrypted. Never logged.
+                <p style={{ fontSize: 12, color: isJwt ? 'var(--color-primary)' : 'var(--color-text-muted)', marginTop: 4 }}>
+                  {isJwt
+                    ? '✓ Supabase JWT detected — Pyra will send both apikey and Bearer headers automatically.'
+                    : isSupabaseUrl || isClientEcho
+                      ? 'Paste your Supabase anon public key (from Supabase Studio → Project Settings → API). Stored AES-256-GCM encrypted.'
+                      : 'Stored AES-256-GCM encrypted. If a JWT/Supabase anon key is provided, apikey and Bearer are automatically attached.'}
                 </p>
               </div>
 

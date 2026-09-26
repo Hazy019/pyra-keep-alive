@@ -64,8 +64,21 @@ export async function PATCH(request: Request, ctx: RouteContext) {
     const body: unknown = await request.json()
     const parsed = patchSchema.parse(body)
 
-    if (parsed.url) {
-      await validateTargetUrl(parsed.url)
+    let normalizedUrl = parsed.url?.trim()
+    if (normalizedUrl) {
+      try {
+        const u = new URL(normalizedUrl)
+        if (
+          (u.hostname.endsWith('.supabase.co') || u.hostname.endsWith('.supabase.in')) &&
+          (u.pathname === '' || u.pathname === '/')
+        ) {
+          u.pathname = '/rest/v1/'
+          normalizedUrl = u.toString()
+        }
+      } catch (_err) {
+        // Fallback to original url if parsing fails
+      }
+      await validateTargetUrl(normalizedUrl)
     }
 
     const result = await withTenant(sessionCtx.tenantId, async (db) => {
@@ -94,16 +107,17 @@ export async function PATCH(request: Request, ctx: RouteContext) {
 
       let authHeaderEncrypted: Buffer | null | undefined = undefined
       if (parsed.authHeader !== undefined) {
-        if (parsed.authHeader === null) {
+        const cleanAuth = parsed.authHeader?.trim()
+        if (!cleanAuth) {
           authHeaderEncrypted = null
         } else {
           const { encryptAuthHeader } = await import('@/lib/crypto')
-          authHeaderEncrypted = Buffer.from(encryptAuthHeader(parsed.authHeader), 'base64')
+          authHeaderEncrypted = Buffer.from(encryptAuthHeader(cleanAuth), 'base64')
         }
       }
 
       const updates = {
-        ...(parsed.url !== undefined && { url: parsed.url }),
+        ...(normalizedUrl !== undefined && { url: normalizedUrl }),
         ...(parsed.pingIntervalMinutes !== undefined && { pingIntervalMinutes: parsed.pingIntervalMinutes }),
         ...(authHeaderEncrypted !== undefined && { authHeaderEncrypted }),
       }

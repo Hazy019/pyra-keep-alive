@@ -20,6 +20,7 @@ import ProductShowcase from '@/components/product-showcase'
 import Testimonials from '@/components/testimonials'
 import CtaBanner from '@/components/cta-banner'
 import GSAPProvider from '@/components/gsap-provider'
+import PyraLogo from '@/components/pyra-logo'
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 
 export const metadata: Metadata = {
@@ -141,16 +142,13 @@ export default function HomePage() {
             <Link
               href="/"
               style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 22,
-                fontWeight: 700,
-                color: 'var(--color-text)',
                 textDecoration: 'none',
-                letterSpacing: '-0.03em',
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
               id="header-logo"
             >
-              Pyr<span style={{ color: 'var(--color-accent)' }}>a</span>
+              <PyraLogo size={28} />
             </Link>
 
             <nav
@@ -613,15 +611,13 @@ export default function HomePage() {
             <Link
               href="/"
               style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 20,
-                fontWeight: 700,
-                color: 'var(--color-text)',
                 textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
               id="footer-logo"
             >
-              Pyr<span style={{ color: 'var(--color-accent)' }}>a</span>
+              <PyraLogo size={24} />
             </Link>
 
             <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>

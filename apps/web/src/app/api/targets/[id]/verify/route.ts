@@ -111,23 +111,23 @@ export async function POST(_req: Request, ctx: RouteContext) {
           // JSON response: { "pyra": "...", "status": "ok" } or { "pyra_verification": "..." }
           if (!verified && (sample.trimStart().startsWith('{') || sample.trimStart().startsWith('['))) {
             try {
-              const json = JSON.parse(sample)
+              const json = JSON.parse(sample) as Record<string, unknown>
               if (
-                json.pyra === token ||
-                json.pyra_verification === token ||
-                json.pyra_verify === token ||
-                json.pyra_challenge === token ||
-                json.token === token
+                json['pyra'] === token ||
+                json['pyra_verification'] === token ||
+                json['pyra_verify'] === token ||
+                json['pyra_challenge'] === token ||
+                json['token'] === token
               ) {
                 verified = true
                 method = 'json_response'
               }
-            } catch {
+            } catch (_err) {
               // Not valid JSON, continue
             }
           }
         }
-      } catch {
+      } catch (_err) {
         // Direct probe failed, fallback to well-known & DNS
       }
 

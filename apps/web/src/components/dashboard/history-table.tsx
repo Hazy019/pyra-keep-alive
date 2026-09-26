@@ -83,7 +83,7 @@ export default function HistoryTable({ logs }: HistoryTableProps) {
 
   const handleCopyUrl = (id: string, url: string | null) => {
     if (!url) return
-    navigator.clipboard.writeText(url)
+    void navigator.clipboard.writeText(url)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 1500)
   }

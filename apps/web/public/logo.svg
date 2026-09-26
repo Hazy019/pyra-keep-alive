@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" fill="none">
+  <defs>
+    <style>
+      .pyra-pulse {
+        stroke: #14161B;
+        transition: stroke 0.3s ease;
+      }
+      .pyra-dot {
+        fill: #E8622C;
+        transition: fill 0.3s ease;
+      }
+      @media (prefers-color-scheme: dark) {
+        .pyra-pulse {
+          stroke: #F8FAFC;
+        }
+        .pyra-dot {
+          fill: #FF6B35;
+        }
+      }
+    </style>
+    <filter id="pyra-glow" x="40" y="-5" width="40" height="40" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Auto-switching Heartbeat Waveform -->
+  <path
+    class="pyra-pulse"
+    d="M10 54 H26 L33 44 L41 68 L48 54 L60 22 L72 82 L82 44 L90 62 L96 54 H110"
+    stroke-width="4.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Apex Beacon Dot -->
+  <circle
+    class="pyra-dot"
+    cx="60"
+    cy="12"
+    r="5.5"
+    filter="url(#pyra-glow)"
+  />
+</svg>

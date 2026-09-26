@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <style>
+      .fav-line {
+        stroke: #14161B;
+      }
+      .fav-dot {
+        fill: #E8622C;
+      }
+      @media (prefers-color-scheme: dark) {
+        .fav-line {
+          stroke: #F8FAFC;
+        }
+        .fav-dot {
+          fill: #FF6B35;
+        }
+      }
+    </style>
+  </defs>
+  <!-- Apex Beacon Dot -->
+  <circle class="fav-dot" cx="16" cy="4.5" r="2.2" />
+  <!-- Crisp high-weight stroke for tab legibility -->
+  <path
+    class="fav-line"
+    d="M2 17 H6 L8.5 13 L11.5 21 L13.5 17 L16 7 L19 25 L21.5 13 L23.5 19 L25.5 17 H30"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

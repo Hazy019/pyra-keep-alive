@@ -5,6 +5,7 @@ import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Menu, X, ExternalLink } from 'lucide-react'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
+import PyraLogo from '@/components/pyra-logo'
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false)
@@ -80,8 +81,8 @@ export default function MobileNav() {
                     margin: 0,
                   }}
                 >
-                  <Link href="/" onClick={close} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    Pyr<span style={{ color: 'var(--color-accent)' }}>a</span>
+                  <Link href="/" onClick={close} style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
+                    <PyraLogo size={24} />
                   </Link>
                 </Dialog.Title>
 

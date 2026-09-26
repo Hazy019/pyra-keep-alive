@@ -6,7 +6,7 @@ import { sql } from 'drizzle-orm'
 import HeartbeatHero from '@/components/heartbeat-hero'
 import Sparkline from '@/components/dashboard/sparkline'
 import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
-import { Globe, Activity, ArrowUpRight, CheckCircle2, AlertTriangle, Clock, Zap, ArrowRight } from 'lucide-react'
+import { Globe, Activity, CheckCircle2, AlertTriangle, Clock, Zap, ArrowRight } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Overview' }
 
