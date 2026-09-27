@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <defs>
+    <filter id="ember-glow" x="10" y="0" width="12" height="12" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="1" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Luminous Apex Beacon Dot (Vibrant Neon Ember) -->
+  <circle cx="16" cy="6" r="3" fill="#FF6B35" filter="url(#ember-glow)" />
+
+  <!-- Crisp Luminous Silver-White Pulse Line for Dark Mode -->
+  <path
+    d="M3 18 H7.5 L9.8 14 L12 22 L13.8 18 L16 8.5 L18.2 24.5 L20 15 L21.6 19.5 L23.2 18 H29"
+    stroke="#F8FAFC"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

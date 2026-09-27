@@ -1,15 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
   <defs>
     <style>
+      :root {
+        color-scheme: light dark;
+      }
       .pyra-pulse-line {
-        stroke: #14161B;
+        stroke: #181512;
       }
       .pyra-beacon-dot {
-        fill: #FF6B35;
+        fill: #E8622C;
       }
       @media (prefers-color-scheme: dark) {
         .pyra-pulse-line {
-          stroke: #F8FAFC;
+          stroke: #F8FAFC !important;
+        }
+        .pyra-beacon-dot {
+          fill: #FF6B35 !important;
         }
       }
     </style>
@@ -22,9 +28,8 @@
   <path
     class="pyra-pulse-line"
     d="M3 18 H7.5 L9.8 14 L12 22 L13.8 18 L16 8.5 L18.2 24.5 L20 15 L21.6 19.5 L23.2 18 H29"
-    stroke-width="2.2"
+    stroke-width="2.3"
     stroke-linecap="round"
     stroke-linejoin="round"
   />
 </svg>
-

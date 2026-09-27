@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   description:
     'Pyra automatically pings your HTTP endpoints, Supabase, Render, and Railway databases on schedule so they never pause, sleep, or suffer cold start latencies.',
   keywords: [
+    'kyrell santillan',
+    'Kyrell Santillan',
+    'Hazy019',
+    'Hazy',
+    '@Hazy019',
+    '@Hazy',
     'keep-alive',
     'uptime monitoring',
     'database keep-alive',
@@ -61,10 +67,29 @@ export const metadata: Metadata = {
       'Prevent database hibernation and API cold starts with encrypted, scheduled keep-alive signals.',
     images: ['/Pyra-logo.png'],
   },
+  verification: {
+    google: 'jurX14tSOTCPj1zMR21guSGjlv22Q17yRsd9fNjop5g',
+  },
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: 'any' },
+      {
+        url: '/favicon-dark.svg',
+        type: 'image/svg+xml',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/favicon-light.svg',
+        type: 'image/svg+xml',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+      },
+      {
+        url: '/favicon.ico',
+        sizes: 'any',
+      },
     ],
     shortcut: '/favicon.svg',
     apple: '/apple-touch-icon.png',
@@ -134,6 +159,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
+        {/* Google Site Verification */}
+        <meta name="google-site-verification" content="jurX14tSOTCPj1zMR21guSGjlv22Q17yRsd9fNjop5g" />
+
+        {/* Dynamic Theme-Aware Favicons for Browser Tabs */}
+        <link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" href="/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+        <link rel="alternate icon" href="/favicon.ico" />
+
         {/* Google Structured Data / JSON-LD for Search Engine Logo & Entity Recognition */}
         <script
           type="application/ld+json"
