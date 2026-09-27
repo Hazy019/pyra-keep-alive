@@ -21,7 +21,7 @@ import Testimonials from '@/components/testimonials'
 import CtaBanner from '@/components/cta-banner'
 import GSAPProvider from '@/components/gsap-provider'
 import PyraLogo from '@/components/pyra-logo'
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import MarketingNavAuth from '@/components/marketing-nav-auth'
 
 export const metadata: Metadata = {
   title: 'Pyra — Keep-Alive & Uptime Service',
@@ -138,63 +138,47 @@ export default function HomePage() {
 
         {/* ─── Navigation ─────────────────────────────────────────────── */}
         <header className="marketing-nav">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-            <Link
-              href="/"
-              style={{
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-              id="header-logo"
-            >
-              <PyraLogo size={28} />
-            </Link>
-
-            <nav
-              style={{ display: 'flex', gap: 24 }}
-              className="hidden md:flex"
-              aria-label="Main navigation"
-            >
-              <a href="#features" className="link-underline" style={{ fontSize: 14 }}>Features</a>
-              <a href="#how-it-works" className="link-underline" style={{ fontSize: 14 }}>How it works</a>
-              <a href="#pricing" className="link-underline" style={{ fontSize: 14 }}>Pricing</a>
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="link-underline"
-                style={{ fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                aria-label="Documentation (opens in a new tab)"
-              >
-                Docs
-                <ExternalLink size={11} aria-hidden="true" style={{ color: 'var(--color-text-muted)' }} />
-              </a>
-            </nav>
-          </div>
-
-          <div className="hidden md:flex" style={{ gap: 10, alignItems: 'center' }}>
-            <SignedOut>
-              <Link href="/sign-in" className="btn btn-ghost btn-sm" id="header-signin-btn">
-                Sign in
-              </Link>
-              <Link href="/sign-up" className="btn btn-primary btn-sm btn-magnetic" id="header-signup-btn">
-                Get started free
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              <Link href="/dashboard" className="btn btn-ghost btn-sm" id="header-dashboard-btn">
-                Dashboard
-              </Link>
-              <UserButton
-                appearance={{
-                  elements: { userButtonAvatarBox: { width: 32, height: 32 } },
+          <div className="marketing-nav-inner">
+            <div className="marketing-nav-left">
+              <Link
+                href="/"
+                style={{
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
                 }}
-              />
-            </SignedIn>
-          </div>
+                id="header-logo"
+              >
+                <PyraLogo size={32} />
+              </Link>
 
-          <MobileNav />
+              <nav
+                className="marketing-desktop-nav"
+                aria-label="Main navigation"
+              >
+                <a href="#features" className="link-underline" style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}>Features</a>
+                <a href="#how-it-works" className="link-underline" style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}>How it works</a>
+                <a href="#pricing" className="link-underline" style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}>Pricing</a>
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link-underline"
+                  style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                  aria-label="Documentation (opens in a new tab)"
+                >
+                  Docs
+                  <ExternalLink size={13} aria-hidden="true" style={{ color: 'var(--color-text-muted)' }} />
+                </a>
+              </nav>
+            </div>
+
+            <MarketingNavAuth />
+
+            <div className="marketing-mobile-toggle">
+              <MobileNav />
+            </div>
+          </div>
         </header>
 
         {/* ─── Hero ───────────────────────────────────────────────────── */}
@@ -344,7 +328,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid-2 stagger-group" style={{ gap: 16 }}>
+            <div className="features-grid-3 stagger-group">
               {features.map((f) => {
                 const Icon = f.icon
                 return (
@@ -353,9 +337,12 @@ export default function HomePage() {
                     className="card tilt-card"
                     style={{
                       display: 'flex',
+                      flexDirection: 'column',
                       gap: 16,
-                      padding: '24px',
-                      alignItems: 'flex-start',
+                      padding: '28px',
+                      background: 'var(--color-surface)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-lg)',
                     }}
                   >
                     <div
@@ -376,10 +363,10 @@ export default function HomePage() {
                       <Icon size={22} aria-hidden="true" />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.05rem', marginBottom: 6, fontWeight: 600 }}>
+                      <h3 style={{ fontSize: '1.15rem', marginBottom: 8, fontWeight: 600, color: 'var(--color-text)' }}>
                         {f.title}
                       </h3>
-                      <p style={{ fontSize: 14, color: 'var(--color-text-muted)', lineHeight: 1.65, margin: 0 }}>
+                      <p style={{ fontSize: 14.5, color: 'var(--color-text-muted)', lineHeight: 1.65, margin: 0 }}>
                         {f.description}
                       </p>
                     </div>
@@ -484,7 +471,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid-2 stagger-group" style={{ gap: 20, alignItems: 'start', maxWidth: 860, margin: '0 auto' }}>
+            <div className="grid-2 stagger-group" style={{ gap: 24, alignItems: 'stretch', maxWidth: 980, margin: '0 auto' }}>
               {pricingPlans.map((plan) => (
                 <div
                   key={plan.name}
@@ -602,51 +589,57 @@ export default function HomePage() {
         <footer
           style={{
             borderTop: '1px solid var(--color-border)',
-            padding: '32px 20px',
+            padding: 'clamp(48px, 6vw, 64px) clamp(20px, 4vw, 48px)',
             background: 'var(--color-surface)',
           }}
         >
           <div
+            className="footer-inner"
             style={{
-              maxWidth: 1100,
+              maxWidth: 1360,
               margin: '0 auto',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
-              gap: 16,
+              gap: 24,
             }}
           >
-            <Link
-              href="/"
-              style={{
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-              id="footer-logo"
-            >
-              <PyraLogo size={24} />
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <Link
+                href="/"
+                style={{
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}
+                id="footer-logo"
+              >
+                <PyraLogo size={28} />
+              </Link>
+              <span style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
+                Zero-cold-start keep-alive monitoring for modern serverless stacks.
+              </span>
+            </div>
 
-            <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Link href="/privacy" className="link-underline" style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Privacy</Link>
-              <Link href="/terms" className="link-underline" style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Terms</Link>
-              <a href="mailto:hello@pyra.dev" className="link-underline" style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Contact</a>
+            <div style={{ display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Link href="/privacy" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>Privacy</Link>
+              <Link href="/terms" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>Terms</Link>
+              <a href="mailto:hello@pyra.dev" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>Contact</a>
               <a
                 href="https://github.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="link-underline"
-                style={{ fontSize: 13, color: 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                 aria-label="GitHub Repository (opens in a new tab)"
               >
                 GitHub
-                <ExternalLink size={11} aria-hidden="true" />
+                <ExternalLink size={13} aria-hidden="true" style={{ color: 'var(--color-text-muted)' }} />
               </a>
             </div>
 
-            <span style={{ fontSize: 12, color: 'var(--color-text-dim)' }}>
+            <span style={{ fontSize: 13.5, color: 'var(--color-text-muted)' }}>
               © {new Date().getFullYear()} Pyra Inc. All rights reserved.
             </span>
           </div>

@@ -8,9 +8,9 @@ export default function CtaBanner() {
     <section
       className="reveal"
       style={{
-        maxWidth: 1100,
+        maxWidth: 1360,
         margin: '0 auto',
-        padding: '16px 20px 64px',
+        padding: '16px clamp(20px, 4vw, 48px) 64px',
       }}
       aria-label="Call to action"
     >

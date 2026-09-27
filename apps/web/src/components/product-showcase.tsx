@@ -128,7 +128,7 @@ export default function ProductShowcase() {
           </div>
 
           {/* Dashboard Canvas Preview */}
-          <div style={{ padding: '28px 32px', background: 'var(--color-bg)' }}>
+          <div className="product-shot-canvas" style={{ padding: '28px 32px', background: 'var(--color-bg)' }}>
             {/* Dashboard Subheader */}
             <div
               style={{
@@ -156,14 +156,7 @@ export default function ProductShowcase() {
             </div>
 
             {/* Metric Cards Row */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 14,
-                marginBottom: 22,
-              }}
-            >
+            <div className="product-shot-metrics">
               {[
                 { label: 'Total Endpoints', val: '8' },
                 { label: 'Endpoints Up', val: '8', color: 'var(--color-success)' },
@@ -198,14 +191,16 @@ export default function ProductShowcase() {
             </div>
 
             {/* Monitored targets table mock */}
-            <div
-              style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
-              }}
-            >
+            <div className="product-shot-table-wrap">
+              <div
+                className="product-shot-table-inner"
+                style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  overflow: 'hidden',
+                }}
+              >
               <div
                 style={{
                   display: 'grid',
@@ -254,6 +249,7 @@ export default function ProductShowcase() {
                   <div style={{ color: 'var(--color-text-dim)', fontSize: 12 }}>{row.time}</div>
                 </div>
               ))}
+              </div>
             </div>
           </div>
         </div>

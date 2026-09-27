@@ -124,6 +124,21 @@ export default async function TargetsPage() {
                           ? `${target.pingIntervalMinutes}m`
                           : `${Math.round(target.pingIntervalMinutes / 60)}h`}
                       </span>
+                      {target.verified ? (
+                        <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>✓ Confirmed</span>
+                      ) : (
+                        <a
+                          href={`/dashboard/targets/${target.id}/verify`}
+                          style={{
+                            fontSize: 12,
+                            color: 'var(--color-warning, #d97706)',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                          }}
+                        >
+                          ⚠ Confirm domain →
+                        </a>
+                      )}
                       {isActive ? (
                         <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>● Active</span>
                       ) : (

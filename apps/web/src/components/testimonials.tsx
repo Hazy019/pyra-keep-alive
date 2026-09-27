@@ -49,7 +49,7 @@ export default function Testimonials() {
         </p>
       </div>
 
-      <div className="grid-2 stagger-group" style={{ gap: 20, maxWidth: 860, margin: '0 auto' }}>
+      <div className="grid-2 stagger-group" style={{ gap: 24, maxWidth: 1200, margin: '0 auto' }}>
         {TESTIMONIALS.map((t) => (
           <div
             key={t.name}

@@ -3,7 +3,9 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { memberships, users } from '@pyra/db/schema'
 import { eq } from 'drizzle-orm'
-import { UserPlus, Shield } from 'lucide-react'
+import { Shield, Sparkles } from 'lucide-react'
+import InviteMemberDialog from '@/components/dashboard/invite-member-dialog'
+import { TeamMemberActions } from '@/components/dashboard/team-member-actions'
 
 export const metadata: Metadata = { title: 'Team Management' }
 
@@ -15,6 +17,7 @@ export default async function TeamPage() {
     email: string
     role: string
     createdAt: Date
+    clerkUserId?: string
   }> = []
 
   if (process.env['DATABASE_URL']) {
@@ -26,6 +29,7 @@ export default async function TeamPage() {
             email: users.email,
             role: memberships.role,
             createdAt: memberships.createdAt,
+            clerkUserId: users.clerkUserId,
           })
           .from(memberships)
           .innerJoin(users, eq(memberships.userId, users.id))
@@ -45,6 +49,7 @@ export default async function TeamPage() {
         email: 'workspace-owner@current.user',
         role: ctx.role,
         createdAt: new Date(),
+        clerkUserId: ctx.clerkUserId,
       },
     ]
   }
@@ -53,20 +58,57 @@ export default async function TeamPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h4 style={{ marginBottom: 4 }}>Team & Access Control</h4>
           <p style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>
-            Manage workspace members, roles, and granular permissions.
+            Manage workspace collaborators, assigned roles, and granular access permissions.
           </p>
         </div>
 
-        {canManageTeam && (
-          <button className="btn btn-primary btn-sm" disabled title="Team invitations are enabled on the Team plan">
-            <UserPlus size={14} aria-hidden="true" />
-            Invite member
-          </button>
-        )}
+        {canManageTeam && <InviteMemberDialog />}
+      </div>
+
+      {/* Pro / Team Active Capabilities Banner */}
+      <div
+        className="card"
+        style={{
+          background: 'linear-gradient(135deg, rgba(232, 98, 44, 0.08) 0%, rgba(217, 119, 6, 0.04) 100%)',
+          border: '1px solid rgba(232, 98, 44, 0.25)',
+          padding: '16px 20px',
+          marginBottom: 28,
+          borderRadius: 'var(--radius-md)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              background: 'rgba(232, 98, 44, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Sparkles size={16} color="var(--color-primary)" />
+          </div>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-text)' }}>
+              Pro / Team Workspace Active
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginTop: 2 }}>
+              Your workspace has 50 endpoint slots, 1-minute ping cadences, multi-user invitations, and admin outage alerts enabled.
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="table-wrapper" style={{ marginBottom: 32 }}>
@@ -77,64 +119,94 @@ export default async function TeamPage() {
               <th>Assigned Role</th>
               <th>Joined Date</th>
               <th>Status</th>
+              {canManageTeam && <th style={{ textAlign: 'right' }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
-            {teamMembers.map((m) => (
-              <tr key={m.id}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        background: 'var(--color-surface-2)',
-                        border: '1px solid var(--color-border)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: 'var(--color-text)',
-                      }}
-                      aria-hidden="true"
-                    >
-                      {m.email.charAt(0).toUpperCase()}
+            {teamMembers.map((m) => {
+              const isPending = m.clerkUserId?.startsWith('invited_')
+              return (
+                <tr key={m.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: '50%',
+                          background: 'var(--color-surface-2)',
+                          border: '1px solid var(--color-border)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: 'var(--color-text)',
+                        }}
+                        aria-hidden="true"
+                      >
+                        {m.email.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontWeight: 500 }}>{m.email}</span>
                     </div>
-                    <span style={{ fontWeight: 500 }}>{m.email}</span>
-                  </div>
-                </td>
-                <td>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      textTransform: 'capitalize',
-                      fontSize: 13,
-                      padding: '2px 8px',
-                      background: 'var(--color-surface-2)',
-                      borderRadius: 6,
-                      border: '1px solid var(--color-border)',
-                    }}
-                  >
-                    <Shield size={11} aria-hidden="true" style={{ color: 'var(--color-accent)' }} />
-                    {m.role}
-                  </span>
-                </td>
-                <td className="text-muted text-sm">
-                  {new Date(m.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </td>
-                <td>
-                  <span className="badge badge-up" style={{ fontSize: 11 }}>Active</span>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        textTransform: 'capitalize',
+                        fontSize: 13,
+                        padding: '2px 8px',
+                        background: 'var(--color-surface-2)',
+                        borderRadius: 6,
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <Shield size={11} aria-hidden="true" style={{ color: 'var(--color-accent)' }} />
+                      {m.role}
+                    </span>
+                  </td>
+                  <td className="text-muted text-sm">
+                    {new Date(m.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </td>
+                  <td>
+                    {isPending ? (
+                      <span
+                        className="badge badge-pending"
+                        style={{
+                          fontSize: 11,
+                          background: 'rgba(217, 119, 6, 0.12)',
+                          color: 'var(--color-warning, #d97706)',
+                          borderColor: 'rgba(217, 119, 6, 0.3)',
+                        }}
+                      >
+                        Invited
+                      </span>
+                    ) : (
+                      <span className="badge badge-up" style={{ fontSize: 11 }}>
+                        Active
+                      </span>
+                    )}
+                  </td>
+                  {canManageTeam && (
+                    <td style={{ textAlign: 'right' }}>
+                      <TeamMemberActions
+                        membershipId={m.id}
+                        memberEmail={m.email}
+                        role={m.role}
+                        canManage={canManageTeam}
+                      />
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -155,7 +227,7 @@ export default async function TeamPage() {
               Owner & Admin
             </p>
             <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0 }}>
-              Can add/delete targets, modify credentials, configure alert channels, and invite team members.
+              Can add/delete targets, modify credentials, configure alert channels, invite colleagues, and receive automated outage notifications.
             </p>
           </div>
           <div>
@@ -163,7 +235,7 @@ export default async function TeamPage() {
               Member & Viewer
             </p>
             <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0 }}>
-              Can view real-time latency graphs, execution history, and target health telemetry.
+              Members can configure and test endpoints. Viewers can monitor real-time latency graphs, execution history, and target health telemetry.
             </p>
           </div>
         </div>

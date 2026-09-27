@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
-import { Pause, Play, Trash2, X, AlertTriangle, Loader2 } from 'lucide-react'
+import { Pause, Play, Trash2, X, AlertTriangle, Loader2, Zap } from 'lucide-react'
 import { getCsrfToken } from '@/lib/csrf-client'
 
 interface TargetRowActionsProps {
@@ -679,3 +679,98 @@ export function TargetDetailManagement({
     </>
   )
 }
+
+export function PingNowButton({ targetId }: { targetId: string }) {
+  const router = useRouter()
+  const [isPinging, setIsPinging] = useState(false)
+  const [statusMsg, setStatusMsg] = useState<{ text: string; isError?: boolean } | null>(null)
+
+  async function handlePingNow() {
+    if (isPinging) return
+    setIsPinging(true)
+    setStatusMsg(null)
+
+    try {
+      const res = await fetch(`/api/targets/${targetId}/ping`, {
+        method: 'POST',
+        headers: {
+          'x-csrf-token': getCsrfToken(),
+        },
+      })
+
+      const data = (await res.json()) as { error?: string; ping?: { success: boolean; statusCode: number | null; latencyMs: number | null; errorMessage?: string } }
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Test ping failed')
+      }
+
+      const ping = data.ping
+      if (ping?.success) {
+        setStatusMsg({ text: `✓ ${ping.statusCode} OK (${ping.latencyMs}ms)` })
+      } else {
+        setStatusMsg({ text: `⚠ ${ping?.statusCode ?? 'Failed'} (${ping?.latencyMs ?? 0}ms)`, isError: true })
+      }
+
+      router.refresh()
+      setTimeout(() => {
+        setStatusMsg(null)
+      }, 5000)
+    } catch (err) {
+      setStatusMsg({ text: err instanceof Error ? err.message : 'Ping error', isError: true })
+      setTimeout(() => {
+        setStatusMsg(null)
+      }, 5000)
+    } finally {
+      setIsPinging(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <button
+        type="button"
+        onClick={() => void handlePingNow()}
+        disabled={isPinging}
+        className="btn btn-secondary btn-sm"
+        title="Send an immediate live ping to verify connectivity"
+        aria-label="Send immediate test ping"
+        style={{
+          padding: '6px 12px',
+          fontSize: 12.5,
+          fontWeight: 600,
+          gap: 6,
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        {isPinging ? (
+          <>
+            <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+            <span>Pinging...</span>
+          </>
+        ) : (
+          <>
+            <Zap size={13} color="var(--color-primary)" aria-hidden="true" />
+            <span>Ping Now</span>
+          </>
+        )}
+      </button>
+
+      {statusMsg && (
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            padding: '3px 8px',
+            borderRadius: 4,
+            background: statusMsg.isError ? 'rgba(178, 58, 46, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+            color: statusMsg.isError ? 'var(--color-error)' : 'var(--color-success)',
+            border: `1px solid ${statusMsg.isError ? 'rgba(178, 58, 46, 0.25)' : 'rgba(34, 197, 94, 0.25)'}`,
+          }}
+        >
+          {statusMsg.text}
+        </span>
+      )}
+    </div>
+  )
+}
+

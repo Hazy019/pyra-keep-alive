@@ -5,8 +5,8 @@ import { requireRole } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { getTarget, getRecentPingLogs } from '@/lib/repositories/target.repo'
 import type { PingLog } from '@pyra/db/schema'
-import { ArrowLeft, CheckCircle2, Pause } from 'lucide-react'
-import { TargetRowActions, TargetDetailManagement } from '@/components/dashboard/target-actions'
+import { ArrowLeft, CheckCircle2, Pause, ShieldAlert } from 'lucide-react'
+import { TargetRowActions, TargetDetailManagement, PingNowButton } from '@/components/dashboard/target-actions'
 
 export const metadata: Metadata = { title: 'Target Details' }
 
@@ -68,10 +68,26 @@ export default async function TargetDetailPage({
         </Link>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h4 style={{ marginBottom: 6, wordBreak: 'break-all' }}>{target.url}</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            {target.verified ? (
+              <span className="badge badge-up">
+                <CheckCircle2 size={12} aria-hidden="true" /> Domain Confirmed
+              </span>
+            ) : (
+              <span
+                className="badge badge-pending"
+                style={{
+                  background: 'rgba(217, 119, 6, 0.12)',
+                  color: 'var(--color-warning, #d97706)',
+                  borderColor: 'rgba(217, 119, 6, 0.3)',
+                }}
+              >
+                <ShieldAlert size={12} aria-hidden="true" /> Domain Unconfirmed
+              </span>
+            )}
             {isActive ? (
               <span className="badge badge-up">
                 <CheckCircle2 size={12} aria-hidden="true" /> Active Monitoring
@@ -90,13 +106,51 @@ export default async function TargetDetailPage({
           </div>
         </div>
 
-        <TargetRowActions
-          targetId={target.id}
-          url={target.url}
-          initialActive={isActive}
-          canManage={canManage}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {canManage && <PingNowButton targetId={target.id} />}
+          <TargetRowActions
+            targetId={target.id}
+            url={target.url}
+            initialActive={isActive}
+            canManage={canManage}
+          />
+        </div>
       </div>
+
+      {!target.verified && (
+        <div
+          className="card"
+          style={{
+            background: 'linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(234, 88, 12, 0.04) 100%)',
+            border: '1px solid rgba(217, 119, 6, 0.28)',
+            padding: '18px 22px',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: 28,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 16,
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, color: 'var(--color-warning, #d97706)', fontSize: 15 }}>
+              <ShieldAlert size={18} aria-hidden="true" />
+              Domain Ownership Confirmation Required
+            </div>
+            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--color-text-muted)', maxWidth: 540, lineHeight: 1.45 }}>
+              Confirm ownership via DNS TXT, HTML &lt;meta&gt; tag, HTTP header, or challenge file to unlock guaranteed high-frequency pings and protect your endpoint.
+            </p>
+          </div>
+          <Link
+            href={`/dashboard/targets/${target.id}/verify`}
+            className="btn btn-primary btn-sm"
+            style={{ fontWeight: 600, padding: '7px 15px' }}
+          >
+            Confirm Domain Ownership →
+          </Link>
+        </div>
+      )}
 
       <div className="grid-3" style={{ gap: 16, marginBottom: 32 }}>
         <div className="card" style={{ padding: 20 }}>

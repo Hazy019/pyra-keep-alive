@@ -30,66 +30,24 @@ export default function TrustedBy() {
       style={{ width: '100%', padding: '0 0 24px' }}
     >
       {/* ─── Metric counters bridging hero boundary ─────────────────────── */}
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: '0 auto',
-          padding: '0 20px',
-        }}
-      >
-        <div
-          className="card card-overlap"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-xl)',
-            boxShadow: 'var(--shadow-overlap)',
-            padding: '24px 32px',
-            marginTop: -28,
-            position: 'relative',
-            zIndex: 10,
-            marginBottom: 24,
-          }}
-        >
-          <div
-            className="grid-4"
-            style={{ textAlign: 'center', gap: 0 }}
-          >
-            {STATS.map((stat, i) => (
+      <div className="stats-card-wrapper">
+        <div className="stats-card">
+          <div className="stats-grid-track">
+            {STATS.map((stat) => (
               <div
                 key={stat.label}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  padding: '8px 16px',
-                  borderRight: i < STATS.length - 1 ? '1px solid var(--color-border)' : 'none',
-                }}
+                className="stats-grid-item"
               >
                 <div
-                  className="stat-number"
+                  className="stat-number stats-number"
                   data-value={stat.value}
                   data-prefix={stat.prefix ?? ''}
                   data-suffix={stat.suffix ?? ''}
                   data-decimals={stat.decimals ?? 0}
-                  style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 'clamp(1.6rem, 2.5vw, 2.1rem)',
-                    fontWeight: 700,
-                    color: 'var(--color-text)',
-                    lineHeight: 1.1,
-                  }}
                 >
                   {stat.prefix ?? ''}0{stat.suffix ?? ''}
                 </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: 'var(--color-text-muted)',
-                    lineHeight: 1.4,
-                  }}
-                >
+                <div className="stats-label">
                   {stat.label}
                 </div>
               </div>

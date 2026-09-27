@@ -133,28 +133,47 @@ export async function POST(request: Request) {
       // 5. Generate verification token
       const verificationToken = randomUUID()
 
-      // 6. Create target (ready and active immediately, zero hassle)
+      // 6. Create target (domain confirmation required for ownership verification)
       const target = await createTarget(db, {
         tenantId: ctx.tenantId,
         url: normalizedUrl,
         authHeaderEncrypted,
-        verified: true,
+        verified: false,
         verificationToken,
         pingIntervalMinutes: requestedInterval,
         createdBy: ctx.userId,
       })
 
-      // 7. Audit log
+      // 7. Execute immediate pre-flight connectivity handshake probe
+      let initialPing = null
+      try {
+        const { executePing } = await import('@/lib/ping-service')
+        initialPing = await executePing(
+          db,
+          ctx.tenantId,
+          target.id,
+          normalizedUrl,
+          cleanAuth,
+        )
+      } catch (pingErr) {
+        console.warn('[POST /api/targets] Preflight ping probe failed:', pingErr)
+      }
+
+      // 8. Audit log
       await writeAuditLog(makeAuditDb(db), {
         tenantId: ctx.tenantId,
         actorUserId: ctx.userId,
         action: AUDIT_ACTIONS.TARGET_CREATED,
         targetResource: target.id,
-        metadata: { url: normalizedUrl, pingIntervalMinutes: requestedInterval },
+        metadata: {
+          url: normalizedUrl,
+          pingIntervalMinutes: requestedInterval,
+          preflightSuccess: initialPing?.success ?? false,
+        },
       })
 
       return NextResponse.json(
-        { ...target, authHeaderEncrypted: undefined }, // never return encrypted blob
+        { ...target, authHeaderEncrypted: undefined, initialPing }, // never return encrypted blob
         { status: 201 },
       )
     })
