@@ -20,7 +20,7 @@ import { sql } from 'drizzle-orm'
 import type { DbInstance } from '@/lib/db'
 import type { AuditDb } from '@pyra/shared/audit'
 import { writeAuditLog } from '@pyra/shared/audit'
-import { validateTargetUrl } from '@pyra/shared/ssrf'
+import { validateTargetUrl, safeFetch } from '@pyra/shared'
 import { checkRateLimit, targetVerifyRatelimit } from '@/lib/ratelimit'
 
 interface RouteContext {
@@ -66,23 +66,19 @@ export async function POST(_req: Request, ctx: RouteContext) {
       // ─── 1. Direct Target URL Probe (HTML <meta>, HTTP Header, JSON) ─────
       // Ideal for Vercel, Render, Railway, Fly, and SPA apps on cloud subdomains
       try {
-        await validateTargetUrl(target.url)
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 6000)
-
-        const response = await fetch(target.url, {
+        const response = await safeFetch(target.url, {
           method: 'GET',
           headers: {
             'User-Agent': 'Pyra-Verification/1.0 (+https://pyra-keep-alive-web.vercel.app)',
             'Accept': '*/*',
           },
-          redirect: 'follow',
-          signal: controller.signal,
+          timeoutMs: 6000,
+          maxResponseBytes: 131072,
         })
-        clearTimeout(timeout)
 
         // 1a. Check HTTP Response Headers
-        const headerVal = response.headers.get('x-pyra-verification') ||
+        const headerVal =
+          response.headers.get('x-pyra-verification') ||
           response.headers.get('pyra-verification') ||
           response.headers.get('x-pyra-token')
 
@@ -98,7 +94,8 @@ export async function POST(_req: Request, ctx: RouteContext) {
           const sample = bodyText.slice(0, 131072)
 
           // HTML <meta> tag: <meta name="pyra-verification" content="..."> or <meta content="..." name="pyra-verification">
-          const metaRegex = /<meta\s+[^>]*?(?:name=["'](?:pyra-verification|pyra_verification)["'][^>]*?content=["']([^"']+)["']|content=["']([^"']+)["'][^>]*?name=["'](?:pyra-verification|pyra_verification)["'])[^>]*>/i
+          const metaRegex =
+            /<meta\s+[^>]*?(?:name=["'](?:pyra-verification|pyra_verification)["'][^>]*?content=["']([^"']+)["']|content=["']([^"']+)["'][^>]*?name=["'](?:pyra-verification|pyra_verification)["'])[^>]*>/i
           const metaMatch = sample.match(metaRegex)
           if (metaMatch) {
             const extractedToken = (metaMatch[1] || metaMatch[2] || '').trim()
@@ -137,15 +134,11 @@ export async function POST(_req: Request, ctx: RouteContext) {
         for (const path of wellKnownPaths) {
           try {
             const wellKnownUrl = `${parsed.protocol}//${hostname}${path}`
-            await validateTargetUrl(wellKnownUrl) // SSRF check
-
-            const controller = new AbortController()
-            const timeout = setTimeout(() => controller.abort(), 5000)
-            const response = await fetch(wellKnownUrl, {
+            const response = await safeFetch(wellKnownUrl, {
               headers: { 'User-Agent': 'Pyra-Verification/1.0' },
-              signal: controller.signal,
+              timeoutMs: 5000,
+              maxResponseBytes: 16384,
             })
-            clearTimeout(timeout)
 
             if (response.ok) {
               const text = (await response.text()).trim()

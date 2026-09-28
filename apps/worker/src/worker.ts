@@ -16,13 +16,12 @@ import { Worker, Queue } from 'bullmq'
 import type { Job } from 'bullmq'
 import { sql } from 'drizzle-orm'
 import type { Db } from '@pyra/db'
-import { validateTargetUrl, SsrfError } from '@pyra/shared/ssrf'
+import { validateTargetUrl, SsrfError, safeFetch } from '@pyra/shared'
 import { jobLogger, logger } from '@pyra/shared/logger'
 import type { PingJobPayload } from '@pyra/shared/types'
 import type Redis from 'ioredis'
 import { decryptAuthHeader } from './crypto.js'
 import type { NotificationPayload } from './notifications.js'
-import { Agent, fetch as undiciFetch } from 'undici'
 
 const PING_TIMEOUT_MS = Number(process.env['PING_TIMEOUT_MS'] ?? 10_000)
 const FAILURE_ALERT_THRESHOLD = Number(process.env['FAILURE_ALERT_THRESHOLD'] ?? 3)
@@ -138,54 +137,31 @@ export function createPingWorker(db: Db, redis: Redis) {
         headers = buildPingHeaders(targetUrl, null)
       }
 
-      // 3. Execute HTTP ping — bind to the pinned IP via undici Agent to prevent DNS-rebinding
+      // 3. Execute HTTP ping with safeFetch (pinned IP via undici Agent, manual redirects, timeout)
       const pingStart = Date.now()
       let statusCode: number | null = null
       let success = false
       let errorMessage: string | null = null
 
-      const pinnedIp = resolvedIps[0]!
-      const isIpv6 = pinnedIp.includes(':')
-      const ipFamily = isIpv6 ? 6 : 4
-
-      const dispatcher = new Agent({
-        connect: {
-          lookup: (_hostname, opts, cb) => {
-            if (opts && (opts as { all?: boolean }).all) {
-              cb(null, [{ address: pinnedIp, family: ipFamily }])
-            } else {
-              cb(null, pinnedIp, ipFamily)
-            }
-          },
-        },
-      })
-
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), PING_TIMEOUT_MS)
-
       try {
-        const response = await undiciFetch(targetUrl, {
+        const response = await safeFetch(targetUrl, {
           method: 'GET',
           headers,
-          redirect: 'manual',
-          dispatcher,
-          signal: controller.signal,
+          timeoutMs: PING_TIMEOUT_MS,
+          resolvedIps,
+          maxResponseBytes: 65536,
         })
 
-        clearTimeout(timeout)
         statusCode = response.status
-        // 2xx = success
-        success = statusCode >= 200 && statusCode < 300
+        // 2xx = success, 3xx = non-success
+        success = response.ok
         log.info({ event: 'ping.complete', statusCode, latencyMs: Date.now() - pingStart, success }, 'Ping complete')
       } catch (err) {
-        const isTimeout = err instanceof Error && err.name === 'AbortError'
+        const isTimeout = err instanceof Error && (err.name === 'AbortError' || err.message.includes('timed out'))
         errorMessage = isTimeout ? 'Request timed out' : (err instanceof Error ? err.message : 'Unknown error')
         log.warn({ event: 'ping.failed', err, errorMessage }, 'Ping request failed')
         // Rethrow for BullMQ retry logic
         throw new Error(errorMessage)
-      } finally {
-        clearTimeout(timeout)
-        await dispatcher.destroy().catch(() => {})
       }
 
       const latencyMs = Date.now() - pingStart
