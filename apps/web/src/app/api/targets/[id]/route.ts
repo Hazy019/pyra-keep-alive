@@ -16,6 +16,7 @@ import type { DbInstance } from '@/lib/db'
 import type { AuditDb } from '@pyra/shared/audit'
 import { writeAuditLog } from '@pyra/shared/audit'
 import { validateTargetUrl } from '@pyra/shared/ssrf'
+import { checkRateLimit, targetMutationRatelimit } from '@/lib/ratelimit'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -62,6 +63,23 @@ export async function PATCH(request: Request, ctx: RouteContext) {
   try {
     const { id } = await ctx.params
     const sessionCtx = await requireRoleApi('member')
+
+    // Rate limit: max 60 mutations per hour per tenant
+    const rateLimit = await checkRateLimit(targetMutationRatelimit, sessionCtx.tenantId)
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many target updates. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.max(1, Math.ceil((rateLimit.reset - Date.now()) / 1000))),
+            'X-RateLimit-Limit': String(rateLimit.limit),
+            'X-RateLimit-Remaining': String(rateLimit.remaining),
+          },
+        },
+      )
+    }
+
     const body: unknown = await request.json()
     const parsed = patchSchema.parse(body)
 
@@ -170,6 +188,22 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   try {
     const { id } = await ctx.params
     const sessionCtx = await requireRoleApi('member')
+
+    // Rate limit: max 60 mutations per hour per tenant
+    const rateLimit = await checkRateLimit(targetMutationRatelimit, sessionCtx.tenantId)
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many target deletions. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.max(1, Math.ceil((rateLimit.reset - Date.now()) / 1000))),
+            'X-RateLimit-Limit': String(rateLimit.limit),
+            'X-RateLimit-Remaining': String(rateLimit.remaining),
+          },
+        },
+      )
+    }
 
     const deleted = await withTenant(sessionCtx.tenantId, async (db) => {
       // Ownership check

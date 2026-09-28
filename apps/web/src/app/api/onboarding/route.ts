@@ -3,12 +3,29 @@ import { auth, clerkClient } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { tenants, users, memberships } from '@pyra/db/schema'
 import { eq, sql } from 'drizzle-orm'
+import { checkRateLimit, onboardingRatelimit } from '@/lib/ratelimit'
 
 export async function POST(req: Request) {
   try {
     const { userId } = await auth()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: max 5 onboarding calls per 10 minutes per user
+    const rateLimit = await checkRateLimit(onboardingRatelimit, userId)
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many onboarding attempts. Please try again shortly.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.max(1, Math.ceil((rateLimit.reset - Date.now()) / 1000))),
+            'X-RateLimit-Limit': String(rateLimit.limit),
+            'X-RateLimit-Remaining': String(rateLimit.remaining),
+          },
+        },
+      )
     }
 
     // Fail loudly if DATABASE_URL is not set (TC_07)

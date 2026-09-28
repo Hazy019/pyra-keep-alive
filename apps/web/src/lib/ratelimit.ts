@@ -3,8 +3,10 @@
  *
  * Protects mutation endpoints from abuse and prevents verification
  * endpoints from being weaponized as outbound scanning / DoS vectors.
- * Gracefully degrades to a no-op allow in development / test environments
- * where Upstash credentials are not provisioned.
+ *
+ * Fails closed in production: if Upstash credentials are missing in production,
+ * an error is thrown at startup to prevent running unthrottled.
+ * In development / test environments without credentials, it safely no-ops.
  */
 
 import { Ratelimit } from '@upstash/ratelimit'
@@ -13,6 +15,12 @@ import { Redis } from '@upstash/redis'
 const hasUpstash = Boolean(
   process.env['UPSTASH_REDIS_REST_URL'] && process.env['UPSTASH_REDIS_REST_TOKEN'],
 )
+
+if (process.env['NODE_ENV'] === 'production' && !hasUpstash) {
+  throw new Error(
+    'CRITICAL CONFIG ERROR: Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN in production environment. Rate limiting cannot fail open in production.',
+  )
+}
 
 const redis = hasUpstash
   ? new Redis({
@@ -41,6 +49,30 @@ export const targetVerifyRatelimit = redis
       redis,
       limiter: Ratelimit.slidingWindow(10, '1 m'),
       prefix: 'ratelimit:target:verify',
+      analytics: false,
+    })
+  : null
+
+/**
+ * Target mutation limiter (PATCH / DELETE): 60 mutations per hour per tenant
+ */
+export const targetMutationRatelimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(60, '1 h'),
+      prefix: 'ratelimit:target:mutation',
+      analytics: false,
+    })
+  : null
+
+/**
+ * Onboarding limiter: 5 attempts per 10 minutes per user
+ */
+export const onboardingRatelimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, '10 m'),
+      prefix: 'ratelimit:onboarding',
       analytics: false,
     })
   : null

@@ -31,16 +31,36 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     const csrfHeader = request.headers.get('x-csrf-token')
     const csrfCookie = request.cookies.get('pyra-csrf')?.value
 
-    // Skip CSRF check for Stripe webhooks and first-time onboarding
-    const isExemptApi =
-      request.nextUrl.pathname === '/api/webhooks/stripe' ||
-      request.nextUrl.pathname === '/api/onboarding'
+    if (request.nextUrl.pathname === '/api/onboarding') {
+      // Replaced blanket exemption with strict origin check
+      const origin = request.headers.get('origin')
+      const host = request.headers.get('host')
+      const secFetchSite = request.headers.get('sec-fetch-site')
 
-    if (!isExemptApi && userId && (!csrfHeader || csrfHeader !== csrfCookie)) {
-      return NextResponse.json(
-        { error: 'CSRF token mismatch', correlationId: crypto.randomUUID() },
-        { status: 403 },
-      )
+      let isSameOrigin = false
+      if (origin && host) {
+        try {
+          isSameOrigin = new URL(origin).host === host
+        } catch {
+          isSameOrigin = false
+        }
+      }
+      const isSameSiteFetch = secFetchSite === 'same-origin' || secFetchSite === 'same-site'
+      const hasValidCsrf = Boolean(csrfHeader && csrfCookie && csrfHeader === csrfCookie)
+
+      if (!hasValidCsrf && !isSameOrigin && !isSameSiteFetch) {
+        return NextResponse.json(
+          { error: 'Cross-origin onboarding request rejected', correlationId: crypto.randomUUID() },
+          { status: 403 },
+        )
+      }
+    } else if (request.nextUrl.pathname !== '/api/webhooks/stripe') {
+      if (userId && (!csrfHeader || csrfHeader !== csrfCookie)) {
+        return NextResponse.json(
+          { error: 'CSRF token mismatch', correlationId: crypto.randomUUID() },
+          { status: 403 },
+        )
+      }
     }
   }
 
