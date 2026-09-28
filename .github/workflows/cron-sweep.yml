@@ -1,0 +1,39 @@
+name: Keep-Alive Cron Sweep
+
+on:
+  schedule:
+    # Run every 5 minutes (standard POSIX cron)
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI for testing
+
+concurrency:
+  group: cron-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: Execute Keep-Alive Sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Trigger /api/cron/sweep
+        run: |
+          TARGET_URL="${{ vars.APP_URL || vars.STAGING_APP_URL || 'https://pyra-keep-alive.vercel.app' }}/api/cron/sweep"
+          echo "Triggering keep-alive sweep at: ${TARGET_URL}"
+
+          HTTP_RESPONSE=$(curl -s -S -w "\nHTTP_STATUS:%{http_code}" -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "User-Agent: GitHub-Actions-Cron/1.0" \
+            "${TARGET_URL}")
+
+          HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed -e '$d')
+          HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tail -n1 | cut -d':' -f2)
+
+          echo "Response status: ${HTTP_STATUS}"
+          echo "Response body: ${HTTP_BODY}"
+
+          if [ "${HTTP_STATUS}" -ne 200 ]; then
+            echo "::error::Cron sweep failed with HTTP status ${HTTP_STATUS}"
+            exit 1
+          fi

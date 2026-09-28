@@ -87,7 +87,10 @@ export default clerkMiddleware(
           res.headers.set('Content-Security-Policy', cspHeader)
           return res
         }
-      } else if (request.nextUrl.pathname !== '/api/webhooks/stripe') {
+      } else if (
+        request.nextUrl.pathname !== '/api/webhooks/stripe' &&
+        !request.nextUrl.pathname.startsWith('/api/cron')
+      ) {
         if (userId && (!csrfHeader || csrfHeader !== csrfCookie)) {
           const res = NextResponse.json(
             { error: 'CSRF token mismatch', correlationId: crypto.randomUUID() },
