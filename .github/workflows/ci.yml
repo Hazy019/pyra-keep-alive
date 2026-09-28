@@ -241,6 +241,9 @@ jobs:
       - name: Run DB migrations
         run: pnpm db:migrate
 
+      - name: Build web application
+        run: pnpm --filter @pyra/web build
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
