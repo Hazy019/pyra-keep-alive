@@ -1,6 +1,26 @@
 import type { Metadata } from 'next'
+import { Inter, Fraunces, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
+  axes: ['opsz'],
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+  display: 'swap',
+})
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pyra.dev'
 
@@ -13,12 +33,6 @@ export const metadata: Metadata = {
   description:
     'Pyra automatically pings your HTTP endpoints, Supabase, Render, and Railway databases on schedule so they never pause, sleep, or suffer cold start latencies.',
   keywords: [
-    'kyrell santillan',
-    'Kyrell Santillan',
-    'Hazy019',
-    'Hazy',
-    '@Hazy019',
-    '@Hazy',
     'keep-alive',
     'uptime monitoring',
     'database keep-alive',
@@ -102,10 +116,10 @@ export const metadata: Metadata = {
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 const isClerkConfigured = Boolean(
   publishableKey &&
-  publishableKey.startsWith('pk_') &&
-  !publishableKey.includes('placeholder') &&
-  !publishableKey.includes('...') &&
-  publishableKey !== 'pk_test_Y2xlcmsucHlyYS5kZXYk'
+    publishableKey.startsWith('pk_') &&
+    !publishableKey.includes('placeholder') &&
+    !publishableKey.includes('...') &&
+    publishableKey !== 'pk_test_Y2xlcmsucHlyYS5kZXYk',
 )
 
 const jsonLd = {
@@ -157,7 +171,12 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      className={`${inter.variable} ${fraunces.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+    >
       <head>
         {/* Google Site Verification */}
         <meta name="google-site-verification" content="jurX14tSOTCPj1zMR21guSGjlv22Q17yRsd9fNjop5g" />
@@ -172,9 +191,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {/* Preconnect to Google Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body>
         {isClerkConfigured && publishableKey ? (

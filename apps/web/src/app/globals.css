@@ -1,6 +1,3 @@
-/* ─── Google Fonts ────────────────────────────────────────────────────────── */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&display=swap");
-
 @import "tailwindcss";
 
 /* ─── Pyra Design Tokens ─────────────────────────────────────────────────── */
@@ -16,22 +13,31 @@
   --color-accent:      #E8622C;
   --color-accent-hover:#DF551F;
   --color-accent-dim:  #C74F1E;
+  --color-accent-btn:  #C2410C; /* AA/AAA compliant (~5.18:1 contrast with white text) */
+  --color-accent-btn-hover: #9A3412;
   --color-accent-glow: rgba(232, 98, 44, 0.12);
   --color-accent-glow-strong: rgba(232, 98, 44, 0.22);
   --color-secondary:   #C97B6B;
   --color-text:        #211D1A;
   --color-text-primary:#211D1A;
   --color-text-muted:  #6B6460;
-  --color-text-dim:    #8E8681;
+  --color-text-dim:    #6F6862; /* AA/AAA compliant (~5.21:1 contrast on #FBF9F6) */
   --color-text-on-dark:#F5F0EB;
   --color-success:     #4C7A46;
   --color-warning:     #B56A15;
   --color-error:       #B23A2E;
 
-  /* Typography */
-  --font-body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-heading: "Fraunces", Georgia, serif;
-  --font-mono:    "Geist Mono", "Fira Code", monospace;
+  /* ─── Typography & Font Roles ───────────────────────────────────────────────
+   * 1. Brand / Headings: Fraunces (Variable serif with optical size [opsz] axis for crisp,
+   *    warm editorial headings without thinning out).
+   * 2. Interface / Body: Inter (Highly legible neutral sans-serif for UI elements,
+   *    inputs, labels, paragraphs, and descriptions).
+   * 3. Data / Metrics:   Geist Mono (Monospace font strictly dedicated to numbers,
+   *    latencies, HTTP status codes, and timestamps with tabular numerals).
+   * ──────────────────────────────────────────────────────────────────────────── */
+  --font-body:    var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-fraunces), "Fraunces", Georgia, serif;
+  --font-mono:    var(--font-geist-mono), "Geist Mono", "Fira Code", monospace;
 
   /* Spacing & Radii */
   --radius-sm:  6px;
@@ -96,9 +102,23 @@ body {
 h1, h2, h3, h4, h5 {
   font-family: var(--font-heading);
   font-weight: 600;
+  font-optical-sizing: auto;
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--color-text);
+}
+
+/* Numeric alignment — eliminates jitter on live counters, latencies, and timestamps */
+.tabular-nums,
+[data-tabular-nums],
+.font-mono,
+code,
+time,
+.metric-value,
+.counter-value,
+.latency-badge {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 h1 { font-size: clamp(2.4rem, 5vw + 1rem, 3.75rem); }
@@ -256,17 +276,17 @@ a:hover { color: var(--color-secondary); }
 .btn:disabled:active { transform: none; }
 
 .btn-primary {
-  background: var(--color-accent);
+  background: var(--color-accent-btn);
   color: #FFFFFF;
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-btn);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(232, 98, 44, 0.25);
+  box-shadow: 0 1px 3px rgba(194, 65, 12, 0.25);
 }
 .btn-primary:hover {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
+  background: var(--color-accent-btn-hover);
+  border-color: var(--color-accent-btn-hover);
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 20px rgba(232, 98, 44, 0.35);
+  box-shadow: 0 6px 20px rgba(194, 65, 12, 0.35);
   color: #FFFFFF;
 }
 
