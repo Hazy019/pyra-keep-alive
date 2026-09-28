@@ -2,7 +2,8 @@
  * SSRF Protection — validates URLs before they are stored or pinged.
  *
  * Two layers:
- * 1. Structural check: blocks private/link-local/loopback CIDRs by string match.
+ * 1. Structural check: blocks private/link-local/loopback CIDRs using node:net BlockList
+ *    with IPv4-mapped IPv6 address unwrapping.
  * 2. DNS-pinning check: resolves the hostname and validates every resolved IP
  *    against the blocklist (prevents DNS-rebinding attacks).
  *
@@ -12,50 +13,64 @@
  */
 
 import { promises as dns } from 'node:dns'
-import { isIP } from 'node:net'
+import { BlockList, isIP } from 'node:net'
 
-// ─── Blocked CIDR ranges (represented as prefix checks for simplicity) ───────
-// For production, swap with a proper CIDR library (e.g. `ip-cidr` or `ipaddr.js`).
-// These cover the most critical ranges:
-const BLOCKED_PREFIXES = [
-  '10.',           // RFC1918 class A
-  '172.16.',       // RFC1918 class B (simplified — also blocks 172.17.–172.31.)
-  '172.17.',
-  '172.18.',
-  '172.19.',
-  '172.20.',
-  '172.21.',
-  '172.22.',
-  '172.23.',
-  '172.24.',
-  '172.25.',
-  '172.26.',
-  '172.27.',
-  '172.28.',
-  '172.29.',
-  '172.30.',
-  '172.31.',
-  '192.168.',      // RFC1918 class C
-  '127.',          // Loopback
-  '169.254.',      // Link-local (AWS/GCP/Azure metadata: 169.254.169.254)
-  '0.',            // Unspecified
-  '::1',           // IPv6 loopback
-  'fc00:',         // IPv6 ULA
-  'fd',            // IPv6 ULA
-  'fe80:',         // IPv6 link-local
-  '100.64.',       // Shared address space (RFC6598, Fly.io internal)
-]
+const bl = new BlockList()
+for (const [net, prefix] of [
+  ['0.0.0.0', 8],
+  ['10.0.0.0', 8],
+  ['100.64.0.0', 10],
+  ['127.0.0.0', 8],
+  ['169.254.0.0', 16],
+  ['172.16.0.0', 12],
+  ['192.0.0.0', 24],
+  ['192.0.2.0', 24],
+  ['192.168.0.0', 16],
+  ['198.18.0.0', 15],
+  ['198.51.100.0', 24],
+  ['203.0.113.0', 24],
+  ['224.0.0.0', 4],
+  ['240.0.0.0', 4],
+] as const) {
+  bl.addSubnet(net, prefix, 'ipv4')
+}
 
-const BLOCKED_EXACT = new Set([
-  '0.0.0.0',
-  '255.255.255.255',
-  '::',
-  '::ffff:0:0',
-])
+for (const [net, prefix] of [
+  ['::', 128],
+  ['::1', 128],
+  ['fc00::', 7],
+  ['fe80::', 10],
+  ['fec0::', 10],
+  ['ff00::', 8],
+  ['64:ff9b::', 96],
+  ['2001:db8::', 32],
+] as const) {
+  bl.addSubnet(net, prefix, 'ipv6')
+}
+
+export function unwrapMapped(ip: string): string {
+  const lower = ip.toLowerCase()
+  const dotted = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
+  if (dotted) return dotted[1]!
+  const hex = lower.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/)
+  if (hex) {
+    const hi = parseInt(hex[1]!, 16)
+    const lo = parseInt(hex[2]!, 16)
+    return `${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`
+  }
+  return ip
+}
+
+export function isBlockedIp(raw: string): boolean {
+  const ip = unwrapMapped(raw.replace(/^\[|\]$/g, ''))
+  const family = isIP(ip)
+  if (family === 0) return true // not an IP: fail closed
+  return bl.check(ip, family === 4 ? 'ipv4' : 'ipv6')
+}
 
 /** All schemes allowed for target URLs */
 const ALLOWED_SCHEMES = new Set(['http:', 'https:'])
-/** Max redirects tracked (we don't follow them but we validate the initial URL) */
+/** Max URL length guard */
 const MAX_URL_LENGTH = 2048
 
 export class SsrfError extends Error {
@@ -63,14 +78,6 @@ export class SsrfError extends Error {
     super(message)
     this.name = 'SsrfError'
   }
-}
-
-function isBlockedIp(ip: string): boolean {
-  if (BLOCKED_EXACT.has(ip)) return true
-  for (const prefix of BLOCKED_PREFIXES) {
-    if (ip.startsWith(prefix)) return true
-  }
-  return false
 }
 
 /**
@@ -103,13 +110,15 @@ export async function validateTargetUrl(rawUrl: string): Promise<{ url: URL; res
   }
 
   const hostname = parsed.hostname
+  const cleanHost = hostname.replace(/^\[|\]$/g, '')
 
-  // 5. If hostname is a raw IP address, validate it directly
-  if (isIP(hostname) !== 0) {
-    if (isBlockedIp(hostname)) {
+  // 5. If hostname is a raw IP address (or bracketed IPv6/IPv4-mapped IP), validate it directly
+  const unwrappedHost = unwrapMapped(cleanHost)
+  if (isIP(cleanHost) !== 0 || isIP(unwrappedHost) !== 0) {
+    if (isBlockedIp(cleanHost)) {
       throw new SsrfError(`IP address ${hostname} is in a blocked range`)
     }
-    return { url: parsed, resolvedIps: [hostname] }
+    return { url: parsed, resolvedIps: [cleanHost] }
   }
 
   // 6. Block reserved/special hostnames
@@ -121,8 +130,6 @@ export async function validateTargetUrl(rawUrl: string): Promise<{ url: URL; res
   }
 
   // 7. DNS resolution — resolve4 + resolve6 explicitly to get IPs, not CNAME aliases.
-  // Using dns.resolve() without a type can return CNAME records, allowing bypass via
-  // CNAME chains pointing to internal IPs resolved at a later step.
   let addrs: string[]
   try {
     const [v4, v6] = await Promise.allSettled([
@@ -142,12 +149,7 @@ export async function validateTargetUrl(rawUrl: string): Promise<{ url: URL; res
       const results = await dns.lookup(hostname, { all: true })
       addrs = results.map((r) => r.address)
     } catch {
-      if (process.env['NODE_ENV'] !== 'production') {
-        // In local development, allow mock safe public IP if DNS is unavailable
-        addrs = ['93.184.216.34']
-      } else {
-        throw new SsrfError(`Hostname ${hostname} resolved to no addresses`)
-      }
+      throw new SsrfError(`Hostname ${hostname} resolved to no addresses`)
     }
   }
 
