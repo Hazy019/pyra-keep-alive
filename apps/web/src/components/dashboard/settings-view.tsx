@@ -254,7 +254,7 @@ export default function SettingsView({
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.4 }}>
                   {plan === 'team'
-                    ? '1-minute ping cadences, 50 endpoints, webhook dispatch, and priority SLAs are currently unlocked.'
+                    ? '1-minute ping cadences, 50 endpoints, webhook dispatch, and direct worker scheduling are currently unlocked.'
                     : 'Unlock 1-minute ping cadences, up to 50 endpoints, webhook dispatch, and automated Slack notifications.'}
                 </p>
               </div>

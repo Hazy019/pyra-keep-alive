@@ -66,7 +66,19 @@ export default async function TeamPage() {
           </p>
         </div>
 
-        {canManageTeam && <InviteMemberDialog />}
+        {canManageTeam ? (
+          <InviteMemberDialog />
+        ) : (
+          <button
+            className="btn btn-secondary btn-sm"
+            disabled
+            style={{ opacity: 0.6, cursor: 'not-allowed', gap: 6 }}
+            title="Only workspace owners and admins have permission to invite new members."
+          >
+            <Shield size={14} aria-hidden="true" />
+            <span>Invite member (Admin only)</span>
+          </button>
+        )}
       </div>
 
       {/* Pro / Team Active Capabilities Banner */}

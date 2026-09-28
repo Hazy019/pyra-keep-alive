@@ -555,7 +555,7 @@ export default function BillingView({
                   'Slack, Discord, and custom webhooks',
                   'Team RBAC & workspace isolation',
                   '90-day ping & audit history',
-                  'Priority routing & SLAs',
+                  'Direct worker scheduling',
                 ].map((feat) => (
                   <div
                     key={feat}

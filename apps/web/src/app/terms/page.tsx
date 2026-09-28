@@ -53,7 +53,7 @@ export default function TermsPage() {
             <section>
               <h2 style={{ fontSize: '1.25rem', marginBottom: 8 }}>4. Service Availability & Disclaimers</h2>
               <p>
-                While Pyra strives for 99.99% operational uptime for our edge ping runners, the service is provided &ldquo;as is&rdquo; without warranties of any kind regarding third-party hosting service wake times, DNS propagation delays, or downstream network outages.
+                While Pyra strives for high operational availability for our scheduled ping workers, the service is provided &ldquo;as is&rdquo; without warranties of any kind regarding third-party hosting service wake times, DNS propagation delays, or downstream network outages.
               </p>
             </section>
 

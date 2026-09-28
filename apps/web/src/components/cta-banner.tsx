@@ -45,7 +45,9 @@ export default function CtaBanner() {
         <div
           style={{
             position: 'absolute',
-            top: 0, left: 0, right: 0,
+            top: 0,
+            left: 0,
+            right: 0,
             height: '2px',
             background: 'linear-gradient(90deg, transparent, var(--color-accent), rgba(232,98,44,0.4), transparent)',
           }}
@@ -100,16 +102,16 @@ export default function CtaBanner() {
               className="btn btn-primary btn-lg btn-magnetic"
               id="cta-signup-btn"
               style={{
-                background: 'var(--color-accent)',
+                background: 'var(--color-accent-btn)',
                 color: '#fff',
-                boxShadow: '0 4px 24px rgba(232,98,44,0.45)',
+                boxShadow: '0 4px 24px rgba(194,65,12,0.45)',
               }}
             >
               Get started for free
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
             <Link
-              href="/dashboard"
+              href="/sign-in"
               className="btn btn-lg"
               style={{
                 background: 'rgba(255,255,255,0.08)',
@@ -118,17 +120,13 @@ export default function CtaBanner() {
                 backdropFilter: 'blur(8px)',
               }}
             >
-              View live demo
+              Sign in to open dashboard
             </Link>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 22, alignItems: 'center' }}>
             <p style={{ fontSize: 13, margin: 0, color: 'rgba(245,240,235,0.45)' }}>
               No credit card required · Free 3-target tier · Setup in 60 seconds
-            </p>
-            <p style={{ fontSize: 12.5, margin: 0, color: 'rgba(245,240,235,0.7)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Lock size={12} style={{ color: 'var(--color-accent)' }} aria-hidden="true" />
-              Your credentials are encrypted before they&apos;re stored — we can&apos;t read them, and neither can anyone else.
             </p>
           </div>
         </div>

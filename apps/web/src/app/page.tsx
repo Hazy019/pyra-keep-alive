@@ -17,7 +17,6 @@ import HeartbeatHero from '@/components/heartbeat-hero'
 import MobileNav from '@/components/mobile-nav'
 import TrustedBy from '@/components/trusted-by'
 import ProductShowcase from '@/components/product-showcase'
-import Testimonials from '@/components/testimonials'
 import CtaBanner from '@/components/cta-banner'
 import GSAPProvider from '@/components/gsap-provider'
 import PyraLogo from '@/components/pyra-logo'
@@ -34,14 +33,14 @@ const features = [
     icon: Zap,
     title: 'Intervals down to 1 minute',
     description:
-      'Verified targets on the team plan can be pinged every 60 seconds. Free tier: hourly for verified endpoints.',
+      'Verified targets on the team plan can be pinged every 60 seconds. Free tier offers 5-minute keep-alive intervals.',
     color: '#E8622C',
   },
   {
     icon: Lock,
     title: 'Auth-header pings',
     description:
-      'Store an Authorization header — it is AES-256-GCM envelope-encrypted at rest and never written to raw logs.',
+      'Store an Authorization header — it is AES-256-GCM envelope-encrypted at rest and decrypted only inside the ping worker at request time.',
     color: '#4C7A46',
   },
   {
@@ -84,13 +83,13 @@ const steps = [
   {
     step: '02',
     title: 'Set your schedule',
-    desc: 'Choose a ping cadence. Free plan offers hourly and daily pings; team plan enables 1-minute intervals.',
+    desc: 'Choose a ping cadence. Free plan offers 5-minute intervals; team plan enables 1-minute intervals.',
     icon: Activity,
   },
   {
     step: '03',
     title: 'Pyra handles the rest',
-    desc: 'Our distributed edge workers execute scheduled keep-alive requests, log response latencies, and alert on failures.',
+    desc: 'Our dedicated worker executes scheduled keep-alive requests from Singapore, logs response latencies, and alerts on failures.',
     icon: Zap,
   },
 ]
@@ -103,7 +102,7 @@ const pricingPlans = [
     description: 'For solo developers keeping personal projects alive.',
     features: [
       'Up to 3 monitored targets',
-      'Hourly pings (verified endpoints)',
+      '5-minute pings (verified endpoints)',
       'Daily pings (unverified endpoints)',
       'Email failure notifications',
       '30-day ping latency history',
@@ -119,11 +118,11 @@ const pricingPlans = [
     description: 'For teams needing high-frequency pings and shared workspaces.',
     features: [
       'Up to 50 targets per workspace',
-      'Ping every 60 seconds (verified)',
+      'Ping every 60 seconds (verified endpoints)',
       'Slack, Discord, and custom webhooks',
       'Team RBAC & workspace isolation',
       '90-day ping & audit history',
-      'Priority routing & SLAs',
+      'Direct worker scheduling',
     ],
     cta: 'Start free trial',
     href: '/sign-up?plan=team',
@@ -135,7 +134,6 @@ export default function HomePage() {
   return (
     <GSAPProvider>
       <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
-
         {/* ─── Navigation ─────────────────────────────────────────────── */}
         <header className="marketing-nav">
           <div className="marketing-nav-inner">
@@ -152,20 +150,42 @@ export default function HomePage() {
                 <PyraLogo size={32} />
               </Link>
 
-              <nav
-                className="marketing-desktop-nav"
-                aria-label="Main navigation"
-              >
-                <a href="#features" className="link-underline" style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}>Features</a>
-                <a href="#how-it-works" className="link-underline" style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}>How it works</a>
-                <a href="#pricing" className="link-underline" style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}>Pricing</a>
+              <nav className="marketing-desktop-nav" aria-label="Main navigation">
                 <a
-                  href="https://github.com"
+                  href="#features"
+                  className="link-underline"
+                  style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}
+                >
+                  Features
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="link-underline"
+                  style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}
+                >
+                  How it works
+                </a>
+                <a
+                  href="#pricing"
+                  className="link-underline"
+                  style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)' }}
+                >
+                  Pricing
+                </a>
+                <a
+                  href="https://github.com/Hazy019/pyra-keep-alive#readme"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="link-underline"
-                  style={{ fontSize: '15.5px', fontWeight: 500, color: 'var(--color-text)', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                  aria-label="Documentation (opens in a new tab)"
+                  style={{
+                    fontSize: '15.5px',
+                    fontWeight: 500,
+                    color: 'var(--color-text)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                  aria-label="Documentation on GitHub (opens in a new tab)"
                 >
                   Docs
                   <ExternalLink size={13} aria-hidden="true" style={{ color: 'var(--color-text-muted)' }} />
@@ -183,7 +203,6 @@ export default function HomePage() {
 
         {/* ─── Hero ───────────────────────────────────────────────────── */}
         <div className="hero-outer">
-          {/* Decorative background layers */}
           <div className="hero-bg" aria-hidden="true">
             <div className="hero-bg-grid" />
             <div className="hero-bg-orb-1" />
@@ -208,7 +227,7 @@ export default function HomePage() {
                 />
                 <span>High-Availability Keep-Alive</span>
                 <span style={{ color: 'var(--color-border)', margin: '0 2px' }}>/</span>
-                <span className="hero-eyebrow-accent">Global Edge Pingers</span>
+                <span className="hero-eyebrow-accent">Scheduled Ping Workers</span>
               </div>
 
               <h1 id="hero-title" className="hero-headline">
@@ -239,26 +258,53 @@ export default function HomePage() {
                 <p style={{ fontSize: 12.5, color: 'var(--color-text-dim)', margin: 0 }}>
                   Free forever tier · No credit card required · Instant activation
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--color-text-muted)',
+                    margin: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
                   <Lock size={12} style={{ color: 'var(--color-accent)' }} aria-hidden="true" />
-                  Your credentials are encrypted before they&apos;re stored — we can&apos;t read them, and neither can anyone else.
+                  Auth headers are encrypted at rest with AES-256-GCM and decrypted only inside the ping worker at request time.
                 </p>
               </div>
             </div>
 
-            {/* Right: Layered telemetry card */}
+            {/* Right: Focused Live Pulse Card */}
             <div className="hero-card">
-              {/* Top bar */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
-                  <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', marginBottom: 2 }}>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: 'var(--color-text-muted)',
+                      marginBottom: 2,
+                    }}
+                  >
                     Active telemetry
                   </p>
                   <p style={{ fontSize: 17, fontFamily: 'var(--font-heading)', fontWeight: 700, color: 'var(--color-text)' }}>
                     Live Signal Monitor
                   </p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--tint-success-bg)', border: '1px solid var(--tint-success-border)', padding: '3px 10px', borderRadius: 100 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'var(--tint-success-bg)',
+                    border: '1px solid var(--tint-success-border)',
+                    padding: '3px 10px',
+                    borderRadius: 100,
+                  }}
+                >
                   <span className="status-dot up" style={{ width: 6, height: 6 }} />
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-success)' }}>Operational</span>
                 </div>
@@ -267,21 +313,30 @@ export default function HomePage() {
               <HeartbeatHero />
 
               {/* Bottom meta */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: 14,
+                  paddingTop: 12,
+                  borderTop: '1px solid var(--color-border)',
+                }}
+              >
                 <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
                   Ping Interval: <strong style={{ color: 'var(--color-text)' }}>60s</strong>
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-                  Avg Edge RTT: <strong style={{ color: 'var(--color-accent)' }}>18ms</strong>
+                  Worker Region: <strong style={{ color: 'var(--color-accent)' }}>Singapore (sin)</strong>
                 </span>
               </div>
 
-              {/* Three mini stat pills */}
+              {/* Factual platform badges */}
               <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 {[
-                  { label: '99.99%', sub: 'Uptime' },
-                  { label: '14.2M', sub: 'Pings sent' },
-                  { label: '8,450', sub: 'Endpoints' },
+                  { label: 'AES-256', sub: 'Envelope encrypted' },
+                  { label: '1 min', sub: 'Min interval' },
+                  { label: 'Singapore', sub: 'Worker region' },
                 ].map((s) => (
                   <div
                     key={s.label}
@@ -295,7 +350,9 @@ export default function HomePage() {
                       minWidth: 70,
                     }}
                   >
-                    <div style={{ fontFamily: 'var(--font-heading)', fontSize: 16, fontWeight: 700, color: 'var(--color-text)' }}>{s.label}</div>
+                    <div style={{ fontFamily: 'var(--font-heading)', fontSize: 15, fontWeight: 700, color: 'var(--color-text)' }}>
+                      {s.label}
+                    </div>
                     <div style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>{s.sub}</div>
                   </div>
                 ))}
@@ -304,7 +361,7 @@ export default function HomePage() {
           </section>
         </div>
 
-        {/* ─── Trusted-by & Marquee ────────────────────────────────────── */}
+        {/* ─── Supported Clouds & Architecture ───────────────────────────── */}
         <TrustedBy />
 
         {/* ─── Product Showcase ────────────────────────────────────────── */}
@@ -394,7 +451,6 @@ export default function HomePage() {
               <p>Get endpoints scheduled and protected in less than two minutes.</p>
             </div>
 
-            {/* Steps with connector line */}
             <div className="steps-grid stagger-group">
               {steps.map((item) => {
                 const Icon = item.icon
@@ -433,9 +489,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ─── Testimonials ─────────────────────────────────────────────── */}
-        <Testimonials />
-
         {/* ─── Pricing ──────────────────────────────────────────────────── */}
         <section
           id="pricing"
@@ -448,7 +501,6 @@ export default function HomePage() {
           }}
           aria-labelledby="pricing-title"
         >
-          {/* Background accent orb */}
           <div
             style={{
               position: 'absolute',
@@ -618,20 +670,33 @@ export default function HomePage() {
                 <PyraLogo size={28} />
               </Link>
               <span style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
-                Zero-cold-start keep-alive monitoring for modern serverless stacks.
+                Keep-alive monitoring for modern serverless stacks.
               </span>
             </div>
 
             <div style={{ display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Link href="/privacy" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>Privacy</Link>
-              <Link href="/terms" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>Terms</Link>
-              <a href="mailto:hello@pyra.dev" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>Contact</a>
+              <Link href="/privacy" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>
+                Privacy
+              </Link>
+              <Link href="/terms" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>
+                Terms
+              </Link>
+              <a href="mailto:support@pyra.dev" className="link-underline" style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500 }}>
+                Support
+              </a>
               <a
-                href="https://github.com"
+                href="https://github.com/Hazy019/pyra-keep-alive"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="link-underline"
-                style={{ fontSize: 14.5, color: 'var(--color-text)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                style={{
+                  fontSize: 14.5,
+                  color: 'var(--color-text)',
+                  fontWeight: 500,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
                 aria-label="GitHub Repository (opens in a new tab)"
               >
                 GitHub
@@ -640,7 +705,7 @@ export default function HomePage() {
             </div>
 
             <span style={{ fontSize: 13.5, color: 'var(--color-text-muted)' }}>
-              © {new Date().getFullYear()} Pyra Inc. All rights reserved.
+              © {new Date().getFullYear()} Pyra. All rights reserved.
             </span>
           </div>
         </footer>

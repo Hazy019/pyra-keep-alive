@@ -65,7 +65,19 @@ export default async function TargetsPage() {
             {targets.length} endpoint{targets.length !== 1 ? 's' : ''} monitored
           </p>
         </div>
-        {canAdd && <AddTargetButton />}
+        {canAdd ? (
+          <AddTargetButton />
+        ) : (
+          <button
+            className="btn btn-secondary btn-sm"
+            disabled
+            style={{ opacity: 0.6, cursor: 'not-allowed', gap: 6 }}
+            title="Viewer role is read-only. Ask an admin or owner to register new endpoints."
+          >
+            <Lock size={14} aria-hidden="true" />
+            <span>Add target (Viewer role)</span>
+          </button>
+        )}
       </div>
 
       {targets.length === 0 ? (
@@ -78,7 +90,13 @@ export default async function TargetsPage() {
           <p style={{ color: 'var(--color-text-muted)', fontSize: 14, marginBottom: 24, maxWidth: 380, margin: '0 auto 24px' }}>
             Add your first endpoint. Pyra will start pinging it on your chosen schedule immediately.
           </p>
-          {canAdd && <AddTargetButton />}
+          {canAdd ? (
+            <AddTargetButton />
+          ) : (
+            <p style={{ color: 'var(--color-text-dim)', fontSize: 13, margin: 0 }}>
+              Contact an owner or admin to add the first target to this workspace.
+            </p>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
