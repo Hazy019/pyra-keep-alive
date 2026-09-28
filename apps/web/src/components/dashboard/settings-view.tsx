@@ -26,12 +26,22 @@ export interface AuditLogItem {
   rowHash: string
 }
 
+export interface SecurityCheckItem {
+  id: string
+  title: string
+  detail: string
+  status: 'enforced' | 'warning' | 'active'
+  statusLabel: string
+  verifiedAt: string
+}
+
 interface SettingsViewProps {
   workspaceName: string
   tenantId: string
   plan: string
   targetCount: number
   recentAuditLogs?: AuditLogItem[]
+  securityChecks?: SecurityCheckItem[]
 }
 
 export default function SettingsView({
@@ -40,6 +50,7 @@ export default function SettingsView({
   plan,
   targetCount,
   recentAuditLogs = [],
+  securityChecks = [],
 }: SettingsViewProps) {
   const [copied, setCopied] = useState(false)
 
@@ -278,63 +289,58 @@ export default function SettingsView({
               <h5>Security & Architecture</h5>
             </div>
             <p>
-              Concrete security controls enforced directly in code and database infrastructure. No synthetic claims.
+              Concrete security controls enforced directly in code and database infrastructure. Verified in real time against active configuration.
             </p>
           </div>
 
           <div className="settings-card">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[
-                {
-                  title: 'Row-Level Security enforced on every table',
-                  detail: 'Tenant data isolation is enforced at the PostgreSQL kernel level via SET LOCAL app.current_tenant_id. Zero cross-tenant queries are structurally possible.',
-                },
-                {
-                  title: 'Credentials encrypted with AES-256-GCM before storage',
-                  detail: 'Custom Authorization headers and authentication secrets are sealed with authenticated symmetric encryption before disk write. We cannot read them, and neither can anyone else.',
-                },
-                {
-                  title: 'Every account and target change recorded in a tamper-evident audit log',
-                  detail: 'Every creation, update, and deletion is recorded in a SHA-256 cryptographically hash-chained ledger to detect any historical record modification.',
-                },
-                {
-                  title: 'SSRF protection blocks pings to private networks and cloud metadata',
-                  detail: 'Target URLs are parsed and validated against private IPv4/IPv6 ranges (RFC 1918), loopback interfaces, and cloud link-local metadata endpoints (169.254.169.254).',
-                },
-              ].map((item) => (
+              {securityChecks.map((item) => (
                 <div
-                  key={item.title}
+                  key={item.id}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: 12,
+                    justifyContent: 'space-between',
+                    gap: 14,
                     padding: '12px 14px',
                     borderRadius: 'var(--radius-md)',
                     background: 'var(--color-surface-2)',
                     border: '1px solid var(--color-border)',
                   }}
                 >
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background: 'var(--color-success)',
-                      boxShadow: '0 0 8px rgba(76, 122, 70, 0.6)',
-                      marginTop: 6,
-                      flexShrink: 0,
-                    }}
-                    aria-label="Active"
-                  />
-                  <div>
-                    <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-text)', display: 'block', marginBottom: 3 }}>
-                      {item.title}
-                    </span>
-                    <p style={{ fontSize: 12.5, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
-                      {item.detail}
-                    </p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: item.status === 'warning' ? 'var(--color-error)' : 'var(--color-success)',
+                        boxShadow: item.status === 'warning' ? '0 0 8px rgba(186, 26, 26, 0.6)' : '0 0 8px rgba(76, 122, 70, 0.6)',
+                        marginTop: 6,
+                        flexShrink: 0,
+                      }}
+                      aria-label={item.statusLabel}
+                    />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-text)' }}>
+                          {item.title}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 12.5, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                        {item.detail}
+                      </p>
+                    </div>
                   </div>
+
+                  <span
+                    className={`badge ${item.status === 'warning' ? 'badge-down' : 'badge-up'}`}
+                    style={{ fontSize: 11, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                  >
+                    {item.statusLabel}
+                  </span>
                 </div>
               ))}
             </div>
@@ -354,6 +360,19 @@ export default function SettingsView({
           </div>
 
           <div className="settings-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+                Recent Workspace Events
+              </span>
+              <a
+                href="/dashboard/activity"
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 10px' }}
+              >
+                <span>Open Full Activity Ledger</span>
+                <ArrowRight size={12} />
+              </a>
+            </div>
             {recentAuditLogs.length === 0 ? (
               <div
                 style={{

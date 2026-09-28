@@ -9,6 +9,7 @@ import { logger } from '@pyra/shared/logger'
 import { createScheduler } from './scheduler.js'
 import { createPingWorker } from './worker.js'
 import { createNotificationWorker } from './notifications.js'
+import { createAuditVerifier } from './audit-verifier.js'
 
 const PORT = Number(process.env['PORT'] ?? 8080)
 
@@ -40,6 +41,10 @@ async function main() {
   // ─── Notification Worker ──────────────────────────────────────────────────
   const notificationWorker = createNotificationWorker(db, redis)
 
+  // ─── Audit Log Chain Verifier ─────────────────────────────────────────────
+  const auditVerifier = createAuditVerifier(db)
+  auditVerifier.start()
+
   // ─── Fastify health server ─────────────────────────────────────────────────
   const fastify = Fastify({ logger: false })
 
@@ -52,6 +57,7 @@ async function main() {
       scheduler: 'running',
       worker: pingWorker.isRunning() ? 'running' : 'stopped',
       notifications: notificationWorker.isRunning() ? 'running' : 'stopped',
+      auditVerifier: auditVerifier.isRunning() ? 'running' : 'stopped',
     })
   })
 
@@ -63,6 +69,7 @@ async function main() {
     process.on(signal, async () => {
       logger.info({ event: 'worker.shutdown', signal }, 'Graceful shutdown initiated')
       scheduler.stop()
+      auditVerifier.stop()
       await pingWorker.close()
       await notificationWorker.close()
       await fastify.close()

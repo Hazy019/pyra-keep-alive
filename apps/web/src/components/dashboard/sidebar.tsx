@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton, useUser } from '@clerk/nextjs'
-import { Activity, Target, History, Users, Settings, CreditCard, ChevronsUpDown, Sparkles } from 'lucide-react'
+import { Activity, Target, History, Users, Settings, CreditCard, ChevronsUpDown, Sparkles, ScrollText } from 'lucide-react'
 import PyraLogo from '@/components/pyra-logo'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', icon: Activity },
   { href: '/dashboard/targets', label: 'Targets', icon: Target },
   { href: '/dashboard/history', label: 'History', icon: History },
+  { href: '/dashboard/activity', label: 'Activity', icon: ScrollText },
   { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },

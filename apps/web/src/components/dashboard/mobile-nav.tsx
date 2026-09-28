@@ -16,12 +16,14 @@ import {
   ShieldCheck,
   CreditCard,
   Sparkles,
+  ScrollText,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', icon: Activity },
   { href: '/dashboard/targets', label: 'Targets', icon: Target },
   { href: '/dashboard/history', label: 'History', icon: History },
+  { href: '/dashboard/activity', label: 'Activity', icon: ScrollText },
   { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },

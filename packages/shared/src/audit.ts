@@ -37,19 +37,21 @@ export interface AuditDb {
 
 // ─── Hash computation ────────────────────────────────────────────────────────
 
-const GENESIS_HASH = '0'.repeat(64) // Sentinel for the first row in a chain
+export const GENESIS_HASH = '0'.repeat(64) // Sentinel for the first row in a chain
 
-function computeRowHash(params: {
+export function computeRowHash(params: {
   prevHash: string
   action: string
   metadata: Record<string, unknown> | null
-  createdAt: Date
+  createdAt: Date | string
 }): string {
+  const createdAtIso =
+    params.createdAt instanceof Date ? params.createdAt.toISOString() : new Date(params.createdAt).toISOString()
   const content = [
     params.prevHash,
     params.action,
     JSON.stringify(params.metadata ?? {}),
-    params.createdAt.toISOString(),
+    createdAtIso,
   ].join('|')
   return createHash('sha256').update(content).digest('hex')
 }
@@ -97,7 +99,7 @@ export interface AuditChainRow {
   rowHash: string
   action: string
   metadata: Record<string, unknown> | null
-  createdAt: Date
+  createdAt: Date | string
 }
 
 export interface ChainVerificationResult {
@@ -106,17 +108,54 @@ export interface ChainVerificationResult {
   brokenAtIndex: number
   /** ID of the first broken row, or null if intact */
   brokenRowId: string | null
+  /** Reason for verification failure */
+  reason?: 'genesis_mismatch' | 'prev_hash_mismatch' | 'row_hash_mismatch'
+}
+
+export interface VerifyChainOptions {
+  /** If true, asserts that the first row in the array must reference GENESIS_HASH */
+  expectGenesis?: boolean
 }
 
 /**
  * Verifies the integrity of an audit log chain for a given tenant.
- * Returns the index and ID of the first row whose hash doesn't match.
+ * Validates that:
+ * 1. Each row's prevHash matches the preceding row's rowHash.
+ * 2. Each row's rowHash matches sha256(prevHash | action | metadata | createdAt).
+ * 3. (Optional) The initial row points to GENESIS_HASH if expectGenesis is enabled.
  */
-export function verifyAuditChain(rows: AuditChainRow[]): ChainVerificationResult {
+export function verifyAuditChain(
+  rows: AuditChainRow[],
+  options?: VerifyChainOptions,
+): ChainVerificationResult {
   if (rows.length === 0) return { valid: true, brokenAtIndex: -1, brokenRowId: null }
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]!
+
+    // Check chain linkage
+    if (i === 0) {
+      if (options?.expectGenesis && row.prevHash !== GENESIS_HASH) {
+        return {
+          valid: false,
+          brokenAtIndex: 0,
+          brokenRowId: row.id,
+          reason: 'genesis_mismatch',
+        }
+      }
+    } else {
+      const prevRow = rows[i - 1]!
+      if (row.prevHash !== prevRow.rowHash) {
+        return {
+          valid: false,
+          brokenAtIndex: i,
+          brokenRowId: row.id,
+          reason: 'prev_hash_mismatch',
+        }
+      }
+    }
+
+    // Verify row checksum
     const expectedHash = computeRowHash({
       prevHash: row.prevHash,
       action: row.action,
@@ -124,7 +163,12 @@ export function verifyAuditChain(rows: AuditChainRow[]): ChainVerificationResult
       createdAt: row.createdAt,
     })
     if (expectedHash !== row.rowHash) {
-      return { valid: false, brokenAtIndex: i, brokenRowId: row.id }
+      return {
+        valid: false,
+        brokenAtIndex: i,
+        brokenRowId: row.id,
+        reason: 'row_hash_mismatch',
+      }
     }
   }
 
