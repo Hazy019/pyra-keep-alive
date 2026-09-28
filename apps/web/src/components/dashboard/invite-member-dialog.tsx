@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
-import { UserPlus, X, Loader2, Shield, Sparkles } from 'lucide-react'
+import { UserPlus, X, Loader2, Sparkles } from 'lucide-react'
 import { getCsrfToken } from '@/lib/csrf-client'
 
 export default function InviteMemberDialog() {

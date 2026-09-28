@@ -5,28 +5,23 @@ import {
   CreditCard,
   Sparkles,
   Check,
-  Zap,
   ShieldCheck,
   Layers,
   Clock,
   Bell,
-  Users,
   Download,
-  ArrowRight,
   AlertCircle,
-  FileText,
 } from 'lucide-react'
 
 interface BillingViewProps {
   workspaceName: string
-  tenantId: string
+  tenantId?: string
   initialPlan: string
   targetCount: number
 }
 
 export default function BillingView({
   workspaceName,
-  tenantId,
   initialPlan,
   targetCount,
 }: BillingViewProps) {

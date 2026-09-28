@@ -12,9 +12,18 @@ import {
   ChevronRight,
   ScrollText,
   Lock,
-  Layers,
 } from 'lucide-react'
 import type { ChainVerificationResult } from '@pyra/shared/audit'
+
+interface AuditVerifyApiResponse {
+  success: boolean
+  verified: boolean
+  count: number
+  brokenRowId: string | null
+  brokenAtIndex: number
+  reason: 'genesis_mismatch' | 'prev_hash_mismatch' | 'row_hash_mismatch' | null
+  timestamp: string
+}
 
 export interface ActivityLogEntry {
   id: string
@@ -55,13 +64,21 @@ export default function ActivityView({
     try {
       const res = await fetch('/api/audit/verify')
       if (res.ok) {
-        const data = await res.json()
-        setVerification({
-          valid: data.verified,
-          brokenAtIndex: data.brokenAtIndex,
-          brokenRowId: data.brokenRowId,
-          reason: data.reason,
-        })
+        const data = (await res.json()) as AuditVerifyApiResponse
+        if (data.verified) {
+          setVerification({
+            valid: true,
+            brokenAtIndex: -1,
+            brokenRowId: null,
+          })
+        } else {
+          setVerification({
+            valid: false,
+            brokenAtIndex: data.brokenAtIndex >= 0 ? data.brokenAtIndex : 0,
+            brokenRowId: data.brokenRowId,
+            reason: data.reason ?? 'row_hash_mismatch',
+          })
+        }
       }
     } catch {
       // Keep existing verification state on error

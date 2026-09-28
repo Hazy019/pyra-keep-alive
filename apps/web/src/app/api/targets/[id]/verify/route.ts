@@ -20,7 +20,7 @@ import { sql } from 'drizzle-orm'
 import type { DbInstance } from '@/lib/db'
 import type { AuditDb } from '@pyra/shared/audit'
 import { writeAuditLog } from '@pyra/shared/audit'
-import { validateTargetUrl, safeFetch } from '@pyra/shared'
+import { safeFetch } from '@pyra/shared'
 import { checkRateLimit, targetVerifyRatelimit } from '@/lib/ratelimit'
 
 interface RouteContext {

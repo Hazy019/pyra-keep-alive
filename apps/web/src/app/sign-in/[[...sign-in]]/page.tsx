@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   Zap,
   Bell,
-  Activity,
 } from 'lucide-react'
 import SignedInRedirect from '@/components/auth/signed-in-redirect'
 

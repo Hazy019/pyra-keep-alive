@@ -13,8 +13,6 @@ import {
   Layers,
   ArrowRight,
   ScrollText,
-  Lock,
-  Network,
   History,
 } from 'lucide-react'
 
