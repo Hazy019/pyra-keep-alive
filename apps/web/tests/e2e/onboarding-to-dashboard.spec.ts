@@ -2,9 +2,24 @@ import { test, expect } from '@playwright/test'
 import { DashboardPage } from './pages/dashboard.page'
 import { OnboardingPage } from './pages/onboarding.page'
 
+/**
+ * TC_02: Fresh signup reaches a working dashboard.
+ *
+ * This test requires a real authenticated Clerk session.
+ * In CI without real Clerk test keys, the test is skipped automatically.
+ *
+ * To enable in CI:
+ *   1. Go to GitHub → Settings → Secrets and variables → Actions → Secrets
+ *   2. Add STAGING_CLERK_PUBLISHABLE_KEY (pk_test_xxxxx from Clerk dashboard)
+ *   3. Add STAGING_CLERK_SECRET_KEY      (sk_test_xxxxx from Clerk dashboard)
+ *   4. Set CLERK_KEYS_AVAILABLE=true in the playwright job env (done automatically)
+ */
+const clerkKeysAvailable = process.env.CLERK_KEYS_AVAILABLE === 'true'
+
 test.describe('TC_02: Fresh signup reaches a working dashboard', () => {
+  test.skip(!clerkKeysAvailable, 'Skipped: real Clerk test keys not configured as GitHub Secrets (STAGING_CLERK_PUBLISHABLE_KEY / STAGING_CLERK_SECRET_KEY)')
+
   test('fresh user completes onboarding and lands on functional empty dashboard', async ({ page }) => {
-    // If running in mocked / authenticated test session:
     const onboarding = new OnboardingPage(page)
     const dashboard = new DashboardPage(page)
 

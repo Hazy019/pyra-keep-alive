@@ -13,16 +13,18 @@ export function createServerlessDb(connectionString: string): { db: ServerlessDb
   return { db, pool }
 }
 
-export type AnyDb = {
-  transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>
-}
-
+/**
+ * Minimal interface representing anything that supports a transactional
+ * `transaction()` call compatible with Drizzle ORM's signature.
+ * Using the concrete ServerlessDb type here avoids the `any` that was
+ * causing lint errors on the `(db as any).transaction(...)` cast below.
+ */
 export async function executeWithTenant<T>(
-  db: ServerlessDb | AnyDb,
+  db: ServerlessDb,
   tenantId: string,
   fn: (tx: ServerlessTx) => Promise<T>,
 ): Promise<T> {
-  return await (db as any).transaction(async (tx: ServerlessTx) => {
+  return await db.transaction(async (tx: ServerlessTx) => {
     try {
       await tx.execute(sql`SET LOCAL ROLE pyra_app`)
     } catch (err) {

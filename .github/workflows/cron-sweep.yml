@@ -1,39 +1,96 @@
 name: Keep-Alive Cron Sweep
 
+# This workflow is a FALLBACK cron trigger for the keep-alive sweep.
+#
+# Primary trigger: Vercel native cron (apps/web/vercel.json) — runs every 5 minutes
+# directly from Vercel with CRON_SECRET available as a platform env var. No GitHub
+# Secret needed, no network egress from GitHub runners.
+#
+# This GitHub Actions workflow fires every 10 minutes as a secondary watchdog.
+# If the Vercel deployment is healthy, Vercel cron is already handling it.
+# This workflow acts as a belt-and-suspenders safety net.
+#
+# REQUIRED GitHub Secrets (Settings → Secrets and variables → Actions → Secrets):
+#   CRON_SECRET  — must match the CRON_SECRET env var set in Vercel project settings
+#
+# REQUIRED GitHub Variables (Settings → Secrets and variables → Actions → Variables):
+#   APP_URL      — e.g. https://pyra-keep-alive-web.vercel.app  (no trailing slash)
+
 on:
   schedule:
-    # Run every 5 minutes (standard POSIX cron)
-    - cron: '*/5 * * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub UI for testing
+    # Every 10 minutes — GitHub Actions has up to ~15 min scheduling delay under
+    # load, so 10-min intervals are a realistic minimum. The Vercel native cron
+    # at 5-min intervals is the authoritative primary trigger.
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Manual trigger from GitHub UI for ad-hoc testing
 
 concurrency:
   group: cron-sweep
-  cancel-in-progress: false
+  cancel-in-progress: false # Never cancel a running sweep mid-flight
 
 jobs:
   sweep:
     name: Execute Keep-Alive Sweep
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
 
     steps:
-      - name: Trigger /api/cron/sweep
+      - name: Validate CRON_SECRET is configured
+        # Fail early with a clear message rather than sending a blank Bearer token
+        # which would cause the app to return HTTP 401 or 500.
         run: |
-          TARGET_URL="${{ vars.APP_URL || vars.STAGING_APP_URL || 'https://pyra-keep-alive.vercel.app' }}/api/cron/sweep"
-          echo "Triggering keep-alive sweep at: ${TARGET_URL}"
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRON_SECRET GitHub Secret is not configured."
+            echo "::error::Go to: Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Name: CRON_SECRET  |  Value: <your CRON_SECRET from Vercel project settings>"
+            exit 1
+          fi
 
-          HTTP_RESPONSE=$(curl -s -S -w "\nHTTP_STATUS:%{http_code}" -X GET \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "User-Agent: GitHub-Actions-Cron/1.0" \
+      - name: Resolve target URL
+        id: resolve_url
+        run: |
+          # Prefer explicit APP_URL variable; fall back to the known Vercel URL.
+          BASE_URL="${{ vars.APP_URL || 'https://pyra-keep-alive-web.vercel.app' }}"
+          # Strip trailing slash defensively
+          BASE_URL="${BASE_URL%/}"
+          TARGET_URL="${BASE_URL}/api/cron/sweep"
+          echo "target_url=${TARGET_URL}" >> "$GITHUB_OUTPUT"
+          echo "Cron sweep target: ${TARGET_URL}"
+
+      - name: Trigger keep-alive sweep
+        run: |
+          TARGET_URL="${{ steps.resolve_url.outputs.target_url }}"
+
+          HTTP_RESPONSE=$(curl \
+            --silent \
+            --show-error \
+            --max-time 60 \
+            --write-out "\nHTTP_STATUS:%{http_code}" \
+            --request GET \
+            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --header "User-Agent: GitHub-Actions-CronSweep/2.0 (+https://github.com/${{ github.repository }})" \
+            --header "X-GitHub-Run-Id: ${{ github.run_id }}" \
             "${TARGET_URL}")
 
           HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed -e '$d')
           HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tail -n1 | cut -d':' -f2)
 
-          echo "Response status: ${HTTP_STATUS}"
-          echo "Response body: ${HTTP_BODY}"
+          echo "Response status : ${HTTP_STATUS}"
+          echo "Response body   : ${HTTP_BODY}"
+
+          if [ "${HTTP_STATUS}" -eq 401 ]; then
+            echo "::error::HTTP 401 — CRON_SECRET mismatch. Ensure the secret value matches CRON_SECRET in your Vercel project environment variables."
+            exit 1
+          fi
+
+          if [ "${HTTP_STATUS}" -eq 500 ]; then
+            echo "::error::HTTP 500 — Server error. Check Vercel Function logs for details."
+            exit 1
+          fi
 
           if [ "${HTTP_STATUS}" -ne 200 ]; then
             echo "::error::Cron sweep failed with HTTP status ${HTTP_STATUS}"
             exit 1
           fi
+
+          echo "Sweep completed successfully."

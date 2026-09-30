@@ -7,7 +7,7 @@ import { sql, eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import * as schema from '../schema/index'
 import { targets, tenants, users, memberships } from '../schema/index'
-import { executeWithTenant, ServerlessDb, ServerlessTx } from '../with-tenant'
+import { executeWithTenant, type ServerlessDb, type ServerlessTx } from '../with-tenant'
 
 describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
   let pool: { end: () => Promise<void> }
@@ -28,7 +28,7 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
     if (isLocalhost) {
       const pgPool = new pg.Pool({ connectionString, ssl: false })
       pool = pgPool
-      db = drizzlePg(pgPool, { schema }) as any as ServerlessDb
+      db = drizzlePg(pgPool, { schema }) as unknown as ServerlessDb
     } else {
       const neonPool = new NeonPool({ connectionString })
       pool = neonPool
@@ -126,7 +126,7 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
     )
 
     expect(results.length).toBe(20)
-    results.forEach((rows: any[], i) => {
+    results.forEach((rows, i) => {
       const expectedTenant = i % 2 === 0 ? tenantAId : tenantBId
       const expectedTarget = i % 2 === 0 ? targetAId : targetBId
       expect(rows.length).toBe(1)
@@ -298,16 +298,17 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
     expect(initialTarget?.pingIntervalMinutes).toBe(1440)
 
     // 2. Validate interval boundary check (simulation of PATCH handler logic)
-    const [tenantRow] = (await db.execute(
+    const tenantQueryResult = await db.execute(
       sql`SELECT plan FROM tenants WHERE id = ${tenantAId} LIMIT 1`,
-    )).rows as any[]
-    const plan = tenantRow?.plan ?? 'free'
+    )
+    const tenantRow = tenantQueryResult.rows[0] as Record<string, unknown> | undefined
+    const plan = (tenantRow?.['plan'] as string | undefined) ?? 'free'
     expect(plan).toBe('free')
 
     const minIntervalUnverified = 1440
     const requestedInterval = 1
 
-    let updateAttemptError: any = null
+    let updateAttemptError: (Error & { statusCode?: number; isApiError?: boolean }) | null = null
     try {
       if (!initialTarget?.verified && requestedInterval < minIntervalUnverified) {
         throw Object.assign(
@@ -322,14 +323,14 @@ describe('Pyra Tenant Isolation & Onboarding Data Flow', () => {
         tx.update(targets).set({ pingIntervalMinutes: requestedInterval }).where(eq(targets.id, targetAId)),
       )
     } catch (err) {
-      updateAttemptError = err
+      updateAttemptError = err as Error & { statusCode?: number; isApiError?: boolean }
     }
 
     // 3. Assert error was thrown with HTTP 400 status
     expect(updateAttemptError).toBeDefined()
-    expect(updateAttemptError.statusCode).toBe(400)
-    expect(updateAttemptError.isApiError).toBe(true)
-    expect(updateAttemptError.message).toContain('Ping interval cannot be less than 1440m')
+    expect(updateAttemptError?.statusCode).toBe(400)
+    expect(updateAttemptError?.isApiError).toBe(true)
+    expect(updateAttemptError?.message).toContain('Ping interval cannot be less than 1440m')
 
     // 4. Assert DB row's interval remains unchanged (1440m)
     const [persistedTarget] = await executeWithTenant(db, tenantAId, (tx) =>
