@@ -14,6 +14,12 @@ const isApiRoute = createRouteMatcher(['/api(.*)'])
 
 export default clerkMiddleware(
   async (auth, request: NextRequest) => {
+    // ─── Cron route bypass: CRON_SECRET auth is handled inside /api/cron/sweep ──
+    // Prevents Clerk from rejecting non-JWT Bearer CRON_SECRET tokens
+    if (request.nextUrl.pathname.startsWith('/api/cron')) {
+      return NextResponse.next()
+    }
+
     // ─── Per-request CSP nonce (removes unsafe-inline and unsafe-eval from script-src) ──
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
     const isDev = process.env.NODE_ENV === 'development'

@@ -9,6 +9,7 @@ import { withTenant } from '@/lib/db'
 import { handleApiError } from '@/lib/api-error'
 import { pingLogs, targets } from '@pyra/db/schema'
 import { eq, desc } from 'drizzle-orm'
+import { triggerOpportunisticSweep } from '@/lib/sweep-engine'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,9 @@ export async function GET(request: Request) {
   const correlationId = randomUUID()
   try {
     const ctx = await requireRoleApi('viewer')
+
+    // Passive keep-alive: check and sweep overdue targets in background without blocking response
+    triggerOpportunisticSweep()
     const url = new URL(request.url)
     const limitParam = url.searchParams.get('limit')
     const limit = Math.min(Math.max(1, Number(limitParam) || 100), 100)
