@@ -4,7 +4,6 @@ import { withTenant } from '@/lib/db'
 import { pingLogs, targets } from '@pyra/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import HistoryTable from '@/components/dashboard/history-table'
-import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
 import { Activity } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Execution History' }
@@ -61,28 +60,7 @@ export default async function HistoryPage() {
         </div>
       </div>
 
-      {recentPings.length === 0 ? (
-        <div
-          className="card"
-          style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            color: 'var(--color-text-muted)',
-            borderRadius: 'var(--radius-lg)',
-          }}
-        >
-          <EmptyStateIllustration variant="history" size={120} />
-          <h5 style={{ marginBottom: 6, color: 'var(--color-text)' }}>No ping logs captured yet</h5>
-          <p style={{ fontSize: 14, maxWidth: 380, margin: '0 auto 24px' }}>
-            When scheduled background pings run against your registered endpoints, their response codes and latencies will stream into this container.
-          </p>
-          <a href="/dashboard/targets" className="btn btn-primary btn-sm">
-            View targets
-          </a>
-        </div>
-      ) : (
-        <HistoryTable logs={recentPings} />
-      )}
+      <HistoryTable logs={recentPings} />
     </div>
   )
 }

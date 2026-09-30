@@ -6,6 +6,7 @@ import { sql } from 'drizzle-orm'
 import HeartbeatHero from '@/components/heartbeat-hero'
 import Sparkline from '@/components/dashboard/sparkline'
 import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
+import DashboardAutoRefresh from '@/components/dashboard/dashboard-auto-refresh'
 import { Globe, Activity, CheckCircle2, AlertTriangle, Clock, Zap, ArrowRight } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Overview' }
@@ -98,6 +99,7 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+      <DashboardAutoRefresh intervalMs={15000} />
       {/* ─── Header ────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>

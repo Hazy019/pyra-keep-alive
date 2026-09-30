@@ -7,6 +7,7 @@ import { TargetRowActions } from '@/components/dashboard/target-actions'
 import { Lock } from 'lucide-react'
 import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
 import Sparkline from '@/components/dashboard/sparkline'
+import DashboardAutoRefresh from '@/components/dashboard/dashboard-auto-refresh'
 import { sql } from 'drizzle-orm'
 
 export const metadata: Metadata = { title: 'Targets' }
@@ -58,6 +59,7 @@ export default async function TargetsPage() {
 
   return (
     <div>
+      <DashboardAutoRefresh intervalMs={15000} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
         <div>
           <h4 style={{ marginBottom: 4 }}>Targets</h4>

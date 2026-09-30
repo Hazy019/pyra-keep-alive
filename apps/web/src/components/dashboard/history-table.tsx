@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   CheckCircle2,
   XCircle,
@@ -13,7 +13,9 @@ import {
   Filter,
   Copy,
   Check,
+  RefreshCw,
 } from 'lucide-react'
+import EmptyStateIllustration from '@/components/dashboard/empty-state-illustration'
 
 export interface PingLogItem {
   id: string
@@ -30,7 +32,57 @@ interface HistoryTableProps {
 
 type StatusFilter = 'all' | 'success' | 'failed' | 'slow'
 
-export default function HistoryTable({ logs }: HistoryTableProps) {
+export default function HistoryTable({ logs: initialLogs }: HistoryTableProps) {
+  const [logs, setLogs] = useState<PingLogItem[]>(initialLogs)
+  const [isLive, setIsLive] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [, setLastUpdated] = useState<Date>(new Date())
+  const [, setTick] = useState(0)
+
+  // Sync prop changes if parent component re-renders
+  useEffect(() => {
+    setLogs(initialLogs)
+  }, [initialLogs])
+
+  // Live timer tick every 1s so relative times like '10s ago' update dynamically
+  useEffect(() => {
+    const tickInterval = setInterval(() => {
+      setTick((t) => t + 1)
+    }, 1000)
+    return () => clearInterval(tickInterval)
+  }, [])
+
+  // Auto-polling for real-time updates
+  const fetchLatestLogs = useCallback(async (isManual = false) => {
+    if (isManual) setIsRefreshing(true)
+    try {
+      const res = await fetch('/api/history?limit=100', {
+        headers: { 'Cache-Control': 'no-cache' },
+      })
+      if (res.ok) {
+        const data = (await res.json()) as { logs?: PingLogItem[] }
+        if (Array.isArray(data.logs)) {
+          setLogs(data.logs)
+          setLastUpdated(new Date())
+        }
+      }
+    } catch (err) {
+      console.error('[HistoryTable] Polling error:', err)
+    } finally {
+      if (isManual) setIsRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isLive) return
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        void fetchLatestLogs(false)
+      }
+    }, 5000) // Poll every 5s for real-time updates
+    return () => clearInterval(interval)
+  }, [isLive, fetchLatestLogs])
+
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [pageSize, setPageSize] = useState<number>(8)
@@ -99,6 +151,73 @@ export default function HistoryTable({ logs }: HistoryTableProps) {
     const diffHours = Math.round(diffMinutes / 60)
     if (diffHours < 24) return `${diffHours}h ago`
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="history-container">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={() => setIsLive(!isLive)}
+            title={isLive ? 'Live polling active (every 5s) — click to pause' : 'Live polling paused — click to resume'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 10px',
+              borderRadius: 'var(--radius-full)',
+              background: isLive ? 'rgba(34, 197, 94, 0.1)' : 'var(--color-surface-2)',
+              border: `1px solid ${isLive ? 'rgba(34, 197, 94, 0.3)' : 'var(--color-border)'}`,
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: isLive ? 'var(--color-success)' : 'var(--color-text-dim)',
+              cursor: 'pointer',
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: isLive ? 'var(--color-success)' : 'var(--color-text-dim)',
+                boxShadow: isLive ? '0 0 6px rgba(34, 197, 94, 0.6)' : 'none',
+              }}
+            />
+            <span>{isLive ? 'Live' : 'Paused'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void fetchLatestLogs(true)}
+            disabled={isRefreshing}
+            className="btn btn-ghost btn-sm"
+            style={{ padding: '4px 8px', height: 28, fontSize: 12, gap: 5, color: 'var(--color-text-muted)' }}
+          >
+            <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        <div
+          className="card"
+          style={{
+            textAlign: 'center',
+            padding: '64px 24px',
+            color: 'var(--color-text-muted)',
+            borderRadius: 'var(--radius-lg)',
+          }}
+        >
+          <EmptyStateIllustration variant="history" size={120} />
+          <h5 style={{ marginBottom: 6, color: 'var(--color-text)' }}>No ping logs captured yet</h5>
+          <p style={{ fontSize: 14, maxWidth: 380, margin: '0 auto 24px' }}>
+            When scheduled background pings run against your registered endpoints, their response codes and latencies will stream into this container.
+          </p>
+          <a href="/dashboard/targets" className="btn btn-primary btn-sm">
+            View targets
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -206,30 +325,85 @@ export default function HistoryTable({ logs }: HistoryTableProps) {
             </button>
           </div>
 
-          {/* Rows Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--color-text-muted)', flexShrink: 0 }}>
-            <span>Rows:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
-                setCurrentPage(1)
-              }}
+          {/* Live Controls & Rows Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {/* Live Toggle Pill */}
+            <button
+              type="button"
+              onClick={() => setIsLive(!isLive)}
+              title={isLive ? 'Live polling active (every 5s) — click to pause' : 'Live polling paused — click to resume'}
               style={{
-                padding: '4px 8px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                fontSize: 12,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)',
+                background: isLive ? 'rgba(34, 197, 94, 0.1)' : 'var(--color-surface-2)',
+                border: `1px solid ${isLive ? 'rgba(34, 197, 94, 0.3)' : 'var(--color-border)'}`,
+                fontSize: 11.5,
                 fontWeight: 600,
+                color: isLive ? 'var(--color-success)' : 'var(--color-text-dim)',
                 cursor: 'pointer',
+                transition: 'all 150ms ease',
               }}
             >
-              <option value={8}>8</option>
-              <option value={15}>15</option>
-              <option value={25}>25</option>
-            </select>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: isLive ? 'var(--color-success)' : 'var(--color-text-dim)',
+                  boxShadow: isLive ? '0 0 6px rgba(34, 197, 94, 0.6)' : 'none',
+                  display: 'inline-block',
+                }}
+              />
+              <span>{isLive ? 'Live' : 'Paused'}</span>
+            </button>
+
+            {/* Manual Refresh Button */}
+            <button
+              type="button"
+              onClick={() => void fetchLatestLogs(true)}
+              disabled={isRefreshing}
+              className="btn btn-ghost btn-sm"
+              title="Poll latest logs now"
+              style={{
+                padding: '4px 8px',
+                height: 28,
+                fontSize: 12,
+                gap: 5,
+                color: 'var(--color-text-muted)',
+              }}
+            >
+              <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+
+            {/* Rows Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--color-text-muted)' }}>
+              <span>Rows:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                style={{
+                  padding: '3px 6px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-text)',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <option value={8}>8</option>
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
