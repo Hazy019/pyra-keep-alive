@@ -37,14 +37,21 @@ function getPool(): Pool {
   return globalWithPool._neonPool
 }
 
-let _db: DrizzleDb | null = null
-
+// In production, always create a fresh db instance per invocation to avoid stale pool
+// references after Vercel function recycling. In development, cache it on globalThis
+// to prevent HMR connection leaks.
 export function db(): DrizzleDb {
-  if (!_db) {
+  if (process.env.NODE_ENV === 'production') {
     const pool = getPool()
-    _db = drizzle(pool, { schema })
+    return drizzle(pool, { schema })
   }
-  return _db
+
+  const globalWithDb = globalThis as typeof globalThis & { _pyraDb?: DrizzleDb }
+  if (!globalWithDb._pyraDb) {
+    const pool = getPool()
+    globalWithDb._pyraDb = drizzle(pool, { schema })
+  }
+  return globalWithDb._pyraDb
 }
 
 /**

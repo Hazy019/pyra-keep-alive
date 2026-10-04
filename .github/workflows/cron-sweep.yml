@@ -36,15 +36,19 @@ jobs:
 
     steps:
       - name: Validate CRON_SECRET is configured
-        # Fail early with a clear message rather than sending a blank Bearer token
-        # which would cause the app to return HTTP 401 or 500.
+        # Fail early with a clear message rather than sending a blank Bearer token.
+        # Use env: block — GitHub Actions masks secrets in expressions; using env: is
+        # the canonical way to pass secrets into shell scripts.
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+          if [ -z "${CRON_SECRET}" ]; then
             echo "::error::CRON_SECRET GitHub Secret is not configured."
             echo "::error::Go to: Settings → Secrets and variables → Actions → New repository secret"
             echo "::error::Name: CRON_SECRET  |  Value: <your CRON_SECRET from Vercel project settings>"
             exit 1
           fi
+          echo "CRON_SECRET is configured (length: ${#CRON_SECRET} chars)"
 
       - name: Resolve target URL
         id: resolve_url
@@ -58,8 +62,13 @@ jobs:
           echo "Cron sweep target: ${TARGET_URL}"
 
       - name: Trigger keep-alive sweep
+        # Pass CRON_SECRET via env: (not expression interpolation) to prevent secret masking issues
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           TARGET_URL="${{ steps.resolve_url.outputs.target_url }}"
+
+          echo "Sending cron sweep request to: ${TARGET_URL}"
 
           HTTP_RESPONSE=$(curl \
             --silent \
@@ -67,7 +76,7 @@ jobs:
             --max-time 60 \
             --write-out "\nHTTP_STATUS:%{http_code}" \
             --request GET \
-            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
             --header "User-Agent: GitHub-Actions-CronSweep/2.0 (+https://github.com/${{ github.repository }})" \
             --header "X-GitHub-Run-Id: ${{ github.run_id }}" \
             "${TARGET_URL}")
@@ -79,17 +88,22 @@ jobs:
           echo "Response body   : ${HTTP_BODY}"
 
           if [ "${HTTP_STATUS}" -eq 401 ]; then
-            echo "::error::HTTP 401 — CRON_SECRET mismatch. Ensure the secret value matches CRON_SECRET in your Vercel project environment variables."
+            echo "::error::HTTP 401 — CRON_SECRET mismatch. Verify the secret in GitHub matches CRON_SECRET in Vercel project settings."
+            echo "::error::Body: ${HTTP_BODY}"
             exit 1
           fi
 
           if [ "${HTTP_STATUS}" -eq 500 ]; then
-            echo "::error::HTTP 500 — Server error. Check Vercel Function logs for details."
+            echo "::error::HTTP 500 — Server error in /api/cron/sweep. Full body:"
+            echo "::error::${HTTP_BODY}"
+            echo "::error::Check Vercel Function logs at: https://vercel.com/dashboard"
             exit 1
           fi
 
-          if [ "${HTTP_STATUS}" -ne 200 ]; then
-            echo "::error::Cron sweep failed with HTTP status ${HTTP_STATUS}"
+          # Accept any 2xx response (200, 201, 204, etc.)
+          if [ "${HTTP_STATUS}" -lt 200 ] || [ "${HTTP_STATUS}" -ge 300 ]; then
+            echo "::error::Cron sweep failed with unexpected HTTP status ${HTTP_STATUS}"
+            echo "::error::Body: ${HTTP_BODY}"
             exit 1
           fi
 
