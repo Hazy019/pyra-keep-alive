@@ -1,4 +1,4 @@
-/**
+**
  * Sweep Engine — Core batch execution logic for scheduled keep-alive pings.
  *
  * Reusable across:
@@ -62,8 +62,21 @@ export async function runSweepBatch(limit = 50): Promise<SweepBatchResult> {
         consecutive_failures
     `
 
-    const queryResult = await dbClient.execute(dueSql)
-    const rows = (queryResult.rows ?? queryResult) as unknown as DueTargetRow[]
+    // ─── Cross-tenant batch claim ────────────────────────────────────────────
+    // The sweep must claim targets across ALL tenants. SET LOCAL ROLE neondb_owner
+    // bypasses RLS for the duration of this transaction so all tenants' rows are
+    // visible. The role reverts automatically when the transaction closes.
+    let rows: DueTargetRow[] = []
+    await dbClient.transaction(async (tx) => {
+      try {
+        await tx.execute(sql`SET LOCAL ROLE neondb_owner`)
+      } catch {
+        // In dev/test, neondb_owner may not exist — fall through.
+        console.warn('[sweep-engine] Could not SET LOCAL ROLE neondb_owner (dev/test only)')
+      }
+      const queryResult = await tx.execute(dueSql)
+      rows = (queryResult.rows ?? queryResult) as unknown as DueTargetRow[]
+    })
 
     if (!rows || rows.length === 0) {
       return {
@@ -162,8 +175,16 @@ export function triggerOpportunisticSweep(): void {
         WHERE active = true AND next_run_at <= now()
         LIMIT 1
       `
-      const checkResult = await dbClient.execute(checkSql)
-      const dueRows = (checkResult.rows ?? checkResult) as unknown as Array<{ id: string }>
+      let dueRows: Array<{ id: string }> = []
+      await dbClient.transaction(async (tx) => {
+        try {
+          await tx.execute(sql`SET LOCAL ROLE neondb_owner`)
+        } catch {
+          // Fall back silently in dev/test
+        }
+        const checkResult = await tx.execute(checkSql)
+        dueRows = (checkResult.rows ?? checkResult) as unknown as Array<{ id: string }>
+      })
 
       if (dueRows && dueRows.length > 0) {
         await runSweepBatch(20)
