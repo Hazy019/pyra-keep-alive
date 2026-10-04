@@ -62,7 +62,14 @@ jobs:
           echo "Cron sweep target: ${TARGET_URL}"
 
       - name: Trigger keep-alive sweep
-        # Pass CRON_SECRET via env: (not expression interpolation) to prevent secret masking issues
+        # Pass CRON_SECRET via env: (not expression interpolation) to prevent secret masking issues.
+        #
+        # FIX: We write the response body to a temp file and capture ONLY the HTTP status
+        # code on stdout. The old approach embedded "\nHTTP_STATUS:%{http_code}" inside the
+        # body stream and parsed it with sed+tail+cut — this broke whenever the body
+        # (HTML 404 pages, JSON with colons, multi-line payloads) caused the sentinel line
+        # to not be the actual last line, producing an empty or garbage HTTP_STATUS and
+        # failing the job even when the endpoint responded 200 OK.
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
@@ -70,19 +77,24 @@ jobs:
 
           echo "Sending cron sweep request to: ${TARGET_URL}"
 
-          HTTP_RESPONSE=$(curl \
+          RESPONSE_FILE=$(mktemp)
+
+          # --output writes body to file; --write-out "%{http_code}" prints ONLY the
+          # status code to stdout — completely separate streams, zero parsing ambiguity.
+          HTTP_STATUS=$(curl \
             --silent \
             --show-error \
             --max-time 60 \
-            --write-out "\nHTTP_STATUS:%{http_code}" \
+            --output "${RESPONSE_FILE}" \
+            --write-out "%{http_code}" \
             --request GET \
             --header "Authorization: Bearer ${CRON_SECRET}" \
             --header "User-Agent: GitHub-Actions-CronSweep/2.0 (+https://github.com/${{ github.repository }})" \
             --header "X-GitHub-Run-Id: ${{ github.run_id }}" \
             "${TARGET_URL}")
 
-          HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed -e '$d')
-          HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tail -n1 | cut -d':' -f2)
+          HTTP_BODY=$(cat "${RESPONSE_FILE}")
+          rm -f "${RESPONSE_FILE}"
 
           echo "Response status : ${HTTP_STATUS}"
           echo "Response body   : ${HTTP_BODY}"
@@ -90,6 +102,14 @@ jobs:
           if [ "${HTTP_STATUS}" -eq 401 ]; then
             echo "::error::HTTP 401 — CRON_SECRET mismatch. Verify the secret in GitHub matches CRON_SECRET in Vercel project settings."
             echo "::error::Body: ${HTTP_BODY}"
+            exit 1
+          fi
+
+          if [ "${HTTP_STATUS}" -eq 404 ]; then
+            echo "::error::HTTP 404 — /api/cron/sweep not found at ${TARGET_URL}"
+            echo "::error::Check that APP_URL GitHub Variable (Settings → Secrets and variables → Actions → Variables)"
+            echo "::error::is set to your actual production URL, e.g. https://your-app.vercel.app (no trailing slash)."
+            echo "::error::Body (may be HTML 404 page): ${HTTP_BODY}"
             exit 1
           fi
 
