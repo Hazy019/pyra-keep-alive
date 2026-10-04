@@ -52,6 +52,7 @@ jobs:
           # changes cwd to apps/web BEFORE vercel runs, causing Vercel to
           # resolve apps/web/apps/web — a path that doesn't exist.
           pnpm exec vercel deploy \
+            --yes \
             --token "${{ secrets.VERCEL_TOKEN }}" \
             $SCOPE_ARG \
             --env NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.STAGING_CLERK_PUBLISHABLE_KEY }}" \
@@ -124,6 +125,7 @@ jobs:
           fi
 
           pnpm exec vercel promote \
+            --yes \
             --token "${{ secrets.VERCEL_TOKEN_PROD }}" \
             $SCOPE_ARG
         env:

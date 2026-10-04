@@ -26,7 +26,8 @@
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vercel": "^59.23.2"
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [
