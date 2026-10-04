@@ -276,7 +276,7 @@ jobs:
           path: apps/web/.next
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm --filter @pyra/web exec playwright install --with-deps chromium
 
       # playwright.config.ts uses 'pnpm start' in CI which serves the pre-built app.
       - name: Run Playwright E2E tests
