@@ -12,7 +12,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
   use: {
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000',
     trace: 'on-first-retry',
   },
   projects: [
@@ -23,8 +23,10 @@ export default defineConfig({
   ],
   webServer: {
     command: process.env.CI ? 'pnpm start' : 'pnpm dev',
-    url: 'http://localhost:3000',
+    url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 })

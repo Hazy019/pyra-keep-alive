@@ -157,8 +157,7 @@ jobs:
         run: pnpm --filter @pyra/worker build
 
   # ─── Step 6: Web Build ────────────────────────────────────────────────────
-  # Uploads the compiled .next directory as a GitHub artifact so Playwright
-  # can download and serve it — zero double-compilation, same binary guaranteed.
+  # Validates that the Next.js production build succeeds with zero errors.
   web-build:
     name: Web Build
     runs-on: ubuntu-latest
@@ -197,32 +196,18 @@ jobs:
       - name: Build web application
         run: pnpm --filter @pyra/web build
 
-      # Upload compiled .next so Playwright downloads it — no second build.
-      - name: Upload .next build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: next-build-${{ github.sha }}
-          path: apps/web/.next
-          include-hidden-files: true
-          retention-days: 1
-          if-no-files-found: error
-
   # ─── Step 7: Playwright E2E Suite ─────────────────────────────────────────
-  # Downloads the pre-built .next artifact from web-build — runs against the
-  # identical binary that passed compilation. Auth-gated E2E flows check
-  # CLERK_KEYS_AVAILABLE and skip gracefully when no real Clerk secrets exist.
-  #
-  # To enable auth-gated E2E tests, add these to GitHub → Settings → Secrets:
-  #   STAGING_CLERK_PUBLISHABLE_KEY  (e.g. pk_test_xxxxx from Clerk dashboard)
-  #   STAGING_CLERK_SECRET_KEY       (e.g. sk_test_xxxxx from Clerk dashboard)
+  # Runs E2E tests against a dedicated local build and postgres test container.
   playwright:
     name: Playwright E2E Suite
     runs-on: ubuntu-latest
     needs: web-build
     env:
+      HOSTNAME: 127.0.0.1
+      PORT: 3000
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.STAGING_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
       CLERK_SECRET_KEY: ${{ secrets.STAGING_CLERK_SECRET_KEY || 'sk_test_placeholder' }}
       DATABASE_URL: postgres://postgres:test@localhost:5432/pyra_test
       DATABASE_URL_UNPOOLED: postgres://postgres:test@localhost:5432/pyra_test
@@ -268,12 +253,8 @@ jobs:
       - name: Run DB migrations
         run: pnpm db:migrate
 
-      # Download the exact binary produced in web-build — avoids double compile.
-      - name: Download .next build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: next-build-${{ github.sha }}
-          path: apps/web/.next
+      - name: Build web application
+        run: pnpm --filter @pyra/web build
 
       - name: Install Playwright browsers
         run: pnpm --filter @pyra/web exec playwright install --with-deps chromium
