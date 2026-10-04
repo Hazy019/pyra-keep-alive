@@ -203,6 +203,7 @@ jobs:
         with:
           name: next-build-${{ github.sha }}
           path: apps/web/.next
+          include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
 
