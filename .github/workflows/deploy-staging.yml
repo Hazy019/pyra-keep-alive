@@ -79,6 +79,12 @@ jobs:
             echo "::notice::FLY_API_TOKEN secret is not configured in GitHub repository secrets. Skipping Fly.io staging deployment."
             exit 0
           fi
+
+          if ! flyctl apps list | grep -q "pyra-worker-staging"; then
+            echo "::warning::Fly.io app 'pyra-worker-staging' was not found in your Fly.io account. Skipping worker staging deployment. To enable the dedicated worker, create the app with: flyctl apps create pyra-worker-staging"
+            exit 0
+          fi
+
           flyctl deploy \
             --app pyra-worker-staging \
             --config apps/worker/fly.toml \
@@ -104,6 +110,12 @@ jobs:
             echo "::notice::FLY_API_TOKEN_PROD secret is not configured. Skipping Fly.io production deployment."
             exit 0
           fi
+
+          if ! flyctl apps list | grep -q "pyra-worker-prod"; then
+            echo "::warning::Fly.io app 'pyra-worker-prod' was not found in your Fly.io account. Skipping worker production deployment."
+            exit 0
+          fi
+
           flyctl deploy \
             --app pyra-worker-prod \
             --config apps/worker/fly.toml \
