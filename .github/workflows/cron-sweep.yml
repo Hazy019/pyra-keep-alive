@@ -1,14 +1,11 @@
 name: Keep-Alive Cron Sweep
 
-# This workflow is a FALLBACK cron trigger for the keep-alive sweep.
+# This workflow is the primary keep-alive cron trigger.
 #
-# Primary trigger: Vercel native cron (apps/web/vercel.json) — runs every 5 minutes
-# directly from Vercel with CRON_SECRET available as a platform env var. No GitHub
-# Secret needed, no network egress from GitHub runners.
-#
-# This GitHub Actions workflow fires every 10 minutes as a secondary watchdog.
-# If the Vercel deployment is healthy, Vercel cron is already handling it.
-# This workflow acts as a belt-and-suspenders safety net.
+# Note: Vercel Hobby accounts strictly prohibit cron jobs running more than once per day.
+# Trying to define a 5-minute cron in vercel.json causes Vercel builds/deployments to fail.
+# Therefore, GitHub Actions acts as the reliable, around-the-clock scheduler, triggering
+# the /api/cron/sweep endpoint every 5 minutes to keep databases (Supabase, Neon, etc.) active.
 #
 # REQUIRED GitHub Secrets (Settings → Secrets and variables → Actions → Secrets):
 #   CRON_SECRET  — must match the CRON_SECRET env var set in Vercel project settings
@@ -18,10 +15,8 @@ name: Keep-Alive Cron Sweep
 
 on:
   schedule:
-    # Every 10 minutes — GitHub Actions has up to ~15 min scheduling delay under
-    # load, so 10-min intervals are a realistic minimum. The Vercel native cron
-    # at 5-min intervals is the authoritative primary trigger.
-    - cron: '*/10 * * * *'
+    # Runs every 5 minutes around the clock to ping keep-alive targets
+    - cron: '*/5 * * * *'
   workflow_dispatch: # Manual trigger from GitHub UI for ad-hoc testing
 
 concurrency:
