@@ -47,7 +47,11 @@ jobs:
             SCOPE_ARG="--scope ${{ secrets.VERCEL_SCOPE }}"
           fi
 
-          pnpm --filter @pyra/web exec vercel deploy \
+          # Run vercel from the REPO ROOT so Vercel's configured rootDirectory
+          # (apps/web) is resolved correctly. Using --filter @pyra/web exec
+          # changes cwd to apps/web BEFORE vercel runs, causing Vercel to
+          # resolve apps/web/apps/web — a path that doesn't exist.
+          pnpm exec vercel deploy \
             --token "${{ secrets.VERCEL_TOKEN }}" \
             $SCOPE_ARG \
             --env NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.STAGING_CLERK_PUBLISHABLE_KEY }}" \
@@ -119,7 +123,7 @@ jobs:
             SCOPE_ARG="--scope ${{ secrets.VERCEL_SCOPE_PROD }}"
           fi
 
-          pnpm --filter @pyra/web exec vercel promote \
+          pnpm exec vercel promote \
             --token "${{ secrets.VERCEL_TOKEN_PROD }}" \
             $SCOPE_ARG
         env:

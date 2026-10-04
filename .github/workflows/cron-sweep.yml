@@ -14,7 +14,7 @@ name: Keep-Alive Cron Sweep
 #   CRON_SECRET  — must match the CRON_SECRET env var set in Vercel project settings
 #
 # REQUIRED GitHub Variables (Settings → Secrets and variables → Actions → Variables):
-#   APP_URL      — e.g. https://pyra-keep-alive-web.vercel.app  (no trailing slash)
+#   APP_URL      — e.g. https://pyra-keep-alive.vercel.app  (no trailing slash)
 
 on:
   schedule:
@@ -54,7 +54,9 @@ jobs:
         id: resolve_url
         run: |
           # Prefer explicit APP_URL variable; fall back to the known Vercel URL.
-          BASE_URL="${{ vars.APP_URL || 'https://pyra-keep-alive-web.vercel.app' }}"
+          # NOTE: Set the APP_URL GitHub Variable (Settings → Secrets and variables
+          # → Actions → Variables) to your actual Vercel deployment URL.
+          BASE_URL="${{ vars.APP_URL || 'https://pyra-keep-alive.vercel.app' }}"
           # Strip trailing slash defensively
           BASE_URL="${BASE_URL%/}"
           TARGET_URL="${BASE_URL}/api/cron/sweep"
