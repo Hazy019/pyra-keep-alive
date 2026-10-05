@@ -33,6 +33,10 @@ export const metadata: Metadata = {
   description:
     'Pyra automatically pings your HTTP endpoints, Supabase, Render, and Railway databases on schedule so they never pause, sleep, or suffer cold start latencies.',
   keywords: [
+    'kyrell santillan',
+    'Kyrell Santillan',
+    'Hazy019',
+    'hazy019',
     'keep-alive',
     'uptime monitoring',
     'database keep-alive',
@@ -116,10 +120,10 @@ export const metadata: Metadata = {
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 const isClerkConfigured = Boolean(
   publishableKey &&
-    publishableKey.startsWith('pk_') &&
-    !publishableKey.includes('placeholder') &&
-    !publishableKey.includes('...') &&
-    publishableKey !== 'pk_test_Y2xlcmsucHlyYS5kZXYk',
+  publishableKey.startsWith('pk_') &&
+  !publishableKey.includes('placeholder') &&
+  !publishableKey.includes('...') &&
+  publishableKey !== 'pk_test_Y2xlcmsucHlyYS5kZXYk',
 )
 
 const jsonLd = {
