@@ -23,9 +23,14 @@ import PyraLogo from '@/components/pyra-logo'
 import MarketingNavAuth from '@/components/marketing-nav-auth'
 
 export const metadata: Metadata = {
-  title: 'Pyra — Keep-Alive & Uptime Service',
+  title: {
+    absolute: 'Pyra — Keep-Alive & Uptime Engine for Cloud Databases & APIs',
+  },
   description:
-    'Pyra pings your HTTP endpoints on a schedule so they never pause, sleep, or get forgotten. Free for solo builders.',
+    'Pyra automatically pings your HTTP endpoints, Supabase, Render, and Railway databases on schedule so they never pause, sleep, or suffer cold start latencies.',
+  alternates: {
+    canonical: '/',
+  },
 }
 
 const features = [
@@ -136,6 +141,9 @@ export default function HomePage() {
       <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
         {/* ─── Navigation ─────────────────────────────────────────────── */}
         <header className="marketing-nav">
+          <a href="#main-content" className="sr-only skip-to-content">
+            Skip to main content
+          </a>
           <div className="marketing-nav-inner">
             <div className="marketing-nav-left">
               <Link
@@ -201,8 +209,9 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* ─── Hero ───────────────────────────────────────────────────── */}
-        <div className="hero-outer">
+        <main id="main-content">
+          {/* ─── Hero ───────────────────────────────────────────────────── */}
+          <div className="hero-outer">
           <div className="hero-bg" aria-hidden="true">
             <div className="hero-bg-grid" />
             <div className="hero-bg-orb-1" />
@@ -636,6 +645,7 @@ export default function HomePage() {
 
         {/* ─── CTA Banner ──────────────────────────────────────────────── */}
         <CtaBanner />
+      </main>
 
         {/* ─── Footer ──────────────────────────────────────────────────── */}
         <footer

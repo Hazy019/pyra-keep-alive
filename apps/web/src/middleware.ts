@@ -45,12 +45,17 @@ export default clerkMiddleware(
     requestHeaders.set('x-nonce', nonce)
     requestHeaders.set('Content-Security-Policy', cspHeader)
 
-    // ─── Protect all app routes using Clerk's native handshake-aware protect ────
+    // ─── Protect app routes using Clerk's native handshake-aware protect ────
+    let userId: string | null = null
+
     if (isProtectedRoute(request)) {
       await auth.protect()
+      const session = await auth()
+      userId = session.userId
+    } else if (isAdminRoute(request) || isApiRoute(request)) {
+      const session = await auth()
+      userId = session.userId
     }
-
-    const { userId } = await auth()
 
     // ─── Admin routes: require authentication (role enforced in route handler) ──
     if (isAdminRoute(request) && !userId) {
@@ -139,9 +144,9 @@ export default clerkMiddleware(
 )
 
 export const config = {
-  // Match all routes except Next.js internals and static files
+  // Match all routes except Next.js internals, static files, sitemap.xml, robots.txt
   matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest|xml|txt)).*)',
     '/(api|trpc)(.*)',
     '/__clerk/:path*',
   ],
