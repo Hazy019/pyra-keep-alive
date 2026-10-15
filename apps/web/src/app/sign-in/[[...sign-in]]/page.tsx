@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { SignIn, ClerkLoaded, ClerkLoading, SignedIn, SignedOut } from '@clerk/nextjs'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
@@ -13,8 +14,12 @@ import {
 } from 'lucide-react'
 import SignedInRedirect from '@/components/auth/signed-in-redirect'
 
-export const metadata = {
-  title: 'Sign In — Pyra',
+export const metadata: Metadata = {
+  title: 'Sign In',
+  description: 'Sign in to your Pyra workspace to monitor endpoints, configure keep-alive schedules, and manage team alerts.',
+  alternates: {
+    canonical: '/sign-in',
+  },
 }
 
 const brandFeatures = [

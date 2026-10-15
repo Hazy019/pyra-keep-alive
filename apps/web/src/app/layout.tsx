@@ -37,31 +37,52 @@ export const metadata: Metadata = {
     template: '%s | Pyra',
   },
   description:
-    'Pyra automatically pings your HTTP endpoints, Supabase, Render, and Railway databases on schedule so they never pause, sleep, or suffer cold start latencies.',
+    'Pyra automatically pings your HTTP endpoints, Supabase, Render, Railway, and Neon databases on custom schedules so they never pause, hibernate, or suffer cold start latencies.',
   keywords: [
-    'kyrell santillan',
+    // Developer & Architect Brand Identifiers
     'Kyrell Santillan',
+    'kyrell santillan',
+    'Kyrell',
+    'kyrell',
+    'Hazy',
+    'hazy',
     'Hazy019',
     'hazy019',
     'hazy.cosedevs.com',
-    'keep-alive',
+    // Product & Brand Terms
+    'Pyra',
+    'pyra',
+    'Pyra Keep-Alive',
+    'pyra keep-alive',
+    'pyra.dev',
+    // Core Engine & Capabilities
+    'keep-alive engine',
+    'keep-alive service',
     'uptime monitoring',
     'database keep-alive',
+    'database sleep prevention',
+    'prevent database pause',
+    'cold start latency prevention',
+    'http heartbeat',
+    'serverless ping',
+    'cron ping',
+    'api monitor',
+    'health check monitor',
+    'automated endpoint ping',
+    // Cloud Ecosystem Specifics
     'supabase keep alive',
+    'supabase pause prevention',
     'render keep alive',
+    'render sleep prevention',
+    'railway keep alive',
     'railway sleep prevention',
     'neon keep alive',
-    'cron ping',
-    'health check',
-    'api monitor',
-    'serverless ping',
-    'cold start latency prevention',
+    'cloud database keep alive',
     'background worker ping',
-    'http heartbeat',
-    'database sleep prevention',
   ],
   authors: [
     { name: 'Kyrell Santillan', url: 'https://hazy.cosedevs.com/' },
+    { name: 'Hazy', url: 'https://github.com/Hazy019' },
     { name: 'Pyra Engineering', url: siteUrl },
   ],
   creator: 'Kyrell Santillan',
@@ -88,7 +109,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Pyra — Keep-Alive & Uptime Engine for Cloud Databases & APIs',
     description:
-      'Keep your cloud databases (Supabase, Render, Railway) and backend APIs awake automatically with scheduled, encrypted keep-alive pings.',
+      'Keep your cloud databases (Supabase, Render, Railway, Neon) and backend APIs awake automatically with scheduled, encrypted keep-alive pings.',
     url: siteUrl,
     siteName: 'Pyra',
     locale: 'en_US',
@@ -140,7 +161,7 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   alternates: {
-    canonical: `${siteUrl}/`,
+    canonical: siteUrl,
   },
 }
 
@@ -160,12 +181,13 @@ const jsonLd = {
       '@type': 'Person',
       '@id': 'https://hazy.cosedevs.com/#person',
       name: 'Kyrell Santillan',
-      alternateName: ['Hazy019', 'Kyrell'],
+      alternateName: ['Hazy', 'Hazy019', 'Kyrell'],
       url: 'https://hazy.cosedevs.com/',
       jobTitle: 'Full-Stack Software Engineer & Systems Architect',
       sameAs: [
         'https://hazy.cosedevs.com/',
         'https://github.com/Hazy019',
+        'https://www.linkedin.com/in/kyrellsantillan/',
         'https://x.com/hazy019',
       ],
     },
@@ -178,7 +200,7 @@ const jsonLd = {
         '@type': 'ImageObject',
         '@id': `${siteUrl}/#logo`,
         url: `${siteUrl}/Pyra-logo.png`,
-        caption: 'Pyra Official Logo',
+        caption: 'Pyra Keep-Alive & Uptime Engine Logo',
         width: 512,
         height: 512,
       },
@@ -188,7 +210,10 @@ const jsonLd = {
       founder: {
         '@id': 'https://hazy.cosedevs.com/#person',
       },
-      sameAs: ['https://github.com/Hazy019/pyra-keep-alive'],
+      sameAs: [
+        'https://github.com/Hazy019/pyra-keep-alive',
+        'https://hazy.cosedevs.com/',
+      ],
     },
     {
       '@type': 'WebSite',
@@ -213,7 +238,7 @@ const jsonLd = {
       operatingSystem: 'Cloud',
       url: siteUrl,
       description:
-        'Automated keep-alive infrastructure that pings HTTP endpoints, Supabase, Render, and Railway databases to eliminate cold starts and inactive hibernation.',
+        'Automated keep-alive infrastructure that pings HTTP endpoints, Supabase, Render, Railway, and Neon databases to eliminate cold starts and inactive hibernation.',
       softwareVersion: '1.0.0',
       author: {
         '@id': 'https://hazy.cosedevs.com/#person',
@@ -267,7 +292,7 @@ const jsonLd = {
       },
       inLanguage: 'en-US',
       description:
-        'Pyra automatically pings your HTTP endpoints, Supabase, Render, and Railway databases on schedule so they never pause, sleep, or suffer cold start latencies.',
+        'Pyra automatically pings your HTTP endpoints, Supabase, Render, Railway, and Neon databases on schedule so they never pause, sleep, or suffer cold start latencies.',
     },
   ],
 }

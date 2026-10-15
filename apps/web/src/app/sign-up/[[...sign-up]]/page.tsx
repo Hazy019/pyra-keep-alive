@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { SignUp, ClerkLoaded, ClerkLoading, SignedIn, SignedOut } from '@clerk/nextjs'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
@@ -5,8 +6,12 @@ import Link from 'next/link'
 import { KeyRound, ArrowRight, ExternalLink, Loader2 } from 'lucide-react'
 import SignedInRedirect from '@/components/auth/signed-in-redirect'
 
-export const metadata = {
-  title: 'Sign Up — Pyra',
+export const metadata: Metadata = {
+  title: 'Sign Up',
+  description: 'Create your free Pyra account to keep your Supabase, Render, Railway, and Neon databases awake automatically.',
+  alternates: {
+    canonical: '/sign-up',
+  },
 }
 
 export default async function SignUpPage(props: {

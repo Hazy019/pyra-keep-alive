@@ -3,8 +3,11 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — Pyra',
+  title: 'Privacy Policy',
   description: 'How Pyra collects, encrypts, and handles your target endpoints and telemetry data.',
+  alternates: {
+    canonical: '/privacy',
+  },
 }
 
 export default function PrivacyPage() {

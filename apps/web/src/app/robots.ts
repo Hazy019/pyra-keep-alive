@@ -8,20 +8,40 @@ export default function robots(): MetadataRoute.Robots {
     'https://pyra-keep-alive-web.vercel.app'
   const baseUrl = rawUrl.replace(/\/+$/, '')
 
+  const disallowRoutes = [
+    '/api/',
+    '/api',
+    '/admin/',
+    '/admin',
+    '/dashboard/',
+    '/dashboard',
+    '/onboarding/',
+    '/onboarding',
+  ]
+
+  const allowRoutes = [
+    '/',
+    '/sign-in',
+    '/sign-up',
+    '/privacy',
+    '/terms',
+  ]
+
   return {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        disallow: ['/dashboard/', '/api/', '/onboarding/'],
+        allow: allowRoutes,
+        disallow: disallowRoutes,
       },
       {
         userAgent: 'Googlebot',
-        allow: '/',
-        disallow: ['/dashboard/', '/api/', '/onboarding/'],
+        allow: allowRoutes,
+        disallow: disallowRoutes,
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
     host: baseUrl,
   }
 }
+

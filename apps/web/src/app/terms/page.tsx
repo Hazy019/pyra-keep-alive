@@ -3,8 +3,11 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — Pyra',
+  title: 'Terms of Service',
   description: 'Terms and conditions governing use of Pyra Keep-Alive & Uptime services.',
+  alternates: {
+    canonical: '/terms',
+  },
 }
 
 export default function TermsPage() {
