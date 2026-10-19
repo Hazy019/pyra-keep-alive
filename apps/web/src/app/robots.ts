@@ -17,6 +17,12 @@ export default function robots(): MetadataRoute.Robots {
     '/dashboard',
     '/onboarding/',
     '/onboarding',
+    '/targets/',
+    '/targets',
+    '/team/',
+    '/team',
+    '/settings/',
+    '/settings',
   ]
 
   const allowRoutes = [

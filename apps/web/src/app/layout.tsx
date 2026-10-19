@@ -49,11 +49,14 @@ export const metadata: Metadata = {
     'Hazy019',
     'hazy019',
     'hazy.cosedevs.com',
+    'Kyrell Santillan developer',
+    'Kyrell Santillan portfolio',
     // Product & Brand Terms
     'Pyra',
     'pyra',
     'Pyra Keep-Alive',
     'pyra keep-alive',
+    'Pyra Engine',
     'pyra.dev',
     // Core Engine & Capabilities
     'keep-alive engine',
@@ -69,6 +72,8 @@ export const metadata: Metadata = {
     'api monitor',
     'health check monitor',
     'automated endpoint ping',
+    'cron job alternative',
+    'free keep alive service',
     // Cloud Ecosystem Specifics
     'supabase keep alive',
     'supabase pause prevention',
@@ -77,8 +82,11 @@ export const metadata: Metadata = {
     'railway keep alive',
     'railway sleep prevention',
     'neon keep alive',
+    'neon database keep alive',
     'cloud database keep alive',
     'background worker ping',
+    'prevent render spin down',
+    'keep free tier awake',
   ],
   authors: [
     { name: 'Kyrell Santillan', url: 'https://hazy.cosedevs.com/' },
@@ -116,7 +124,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/Pyra-logo.png',
+        url: `${siteUrl}/Pyra-logo.png`,
         width: 512,
         height: 512,
         alt: 'Pyra — Keep-Alive & Uptime Engine Logo',
@@ -131,7 +139,7 @@ export const metadata: Metadata = {
     title: 'Pyra — Database & Service Keep-Alive Infrastructure',
     description:
       'Prevent database hibernation and API cold starts with encrypted, scheduled keep-alive signals.',
-    images: ['/Pyra-logo.png'],
+    images: [`${siteUrl}/Pyra-logo.png`],
   },
   verification: {
     google: 'jurX14tSOTCPj1zMR21guSGjlv22Q17yRsd9fNjop5g',
@@ -181,20 +189,32 @@ const jsonLd = {
       '@type': 'Person',
       '@id': 'https://hazy.cosedevs.com/#person',
       name: 'Kyrell Santillan',
-      alternateName: ['Hazy', 'Hazy019', 'Kyrell'],
+      alternateName: ['Hazy', 'Hazy019', 'Kyrell', 'Kyrell S.'],
       url: 'https://hazy.cosedevs.com/',
       jobTitle: 'Full-Stack Software Engineer & Systems Architect',
+      description:
+        'Full-stack software engineer and cloud systems architect specializing in high-reliability developer infrastructure and keep-alive systems.',
       sameAs: [
         'https://hazy.cosedevs.com/',
         'https://github.com/Hazy019',
         'https://www.linkedin.com/in/kyrellsantillan/',
         'https://x.com/hazy019',
       ],
+      knowsAbout: [
+        'Next.js',
+        'TypeScript',
+        'PostgreSQL',
+        'Cloud Architecture',
+        'Database Keep-Alive',
+        'Serverless Latency Optimization',
+        'Distributed Systems',
+      ],
     },
     {
       '@type': 'Organization',
       '@id': `${siteUrl}/#organization`,
       name: 'Pyra',
+      legalName: 'Pyra Technologies',
       url: siteUrl,
       logo: {
         '@type': 'ImageObject',
@@ -210,9 +230,19 @@ const jsonLd = {
       founder: {
         '@id': 'https://hazy.cosedevs.com/#person',
       },
+      termsOfService: `${siteUrl}/terms`,
+      privacyPolicy: `${siteUrl}/privacy`,
       sameAs: [
         'https://github.com/Hazy019/pyra-keep-alive',
         'https://hazy.cosedevs.com/',
+      ],
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          email: 'support@pyra.dev',
+          contactType: 'customer support',
+          availableLanguage: ['en'],
+        },
       ],
     },
     {
@@ -235,7 +265,8 @@ const jsonLd = {
       '@id': `${siteUrl}/#software`,
       name: 'Pyra Keep-Alive Engine',
       applicationCategory: 'DeveloperApplication',
-      operatingSystem: 'Cloud',
+      applicationSubCategory: 'Cloud Infrastructure & Monitoring',
+      operatingSystem: 'Cloud / Web',
       url: siteUrl,
       description:
         'Automated keep-alive infrastructure that pings HTTP endpoints, Supabase, Render, Railway, and Neon databases to eliminate cold starts and inactive hibernation.',

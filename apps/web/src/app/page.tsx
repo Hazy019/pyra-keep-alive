@@ -27,10 +27,7 @@ export const metadata: Metadata = {
     absolute: 'Pyra — Keep-Alive & Uptime Engine for Cloud Databases & APIs',
   },
   description:
-    'Pyra automatically pings your HTTP endpoints, Supabase, Render, and Railway databases on schedule so they never pause, sleep, or suffer cold start latencies.',
-  alternates: {
-    canonical: '/',
-  },
+    'Pyra automatically pings your HTTP endpoints, Supabase, Render, Railway, and Neon databases on schedule so they never pause, sleep, or suffer cold start latencies.',
 }
 
 const features = [

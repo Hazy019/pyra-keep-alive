@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Strict mode catches React lifecycle issues earlier
   reactStrictMode: true,
 
+  // Enforce deterministic non-trailing slash routing to eliminate GSC redirect errors
+  trailingSlash: false,
+
   transpilePackages: ['@pyra/db', '@pyra/shared'],
 
   // Fast compilation by avoiding parsing huge barrel files (lucide-react)

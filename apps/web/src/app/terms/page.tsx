@@ -4,15 +4,50 @@ import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description: 'Terms and conditions governing use of Pyra Keep-Alive & Uptime services.',
+  description: 'Terms and conditions governing the use of Pyra Keep-Alive & Uptime services, acceptable use policy, and SSRF restrictions.',
   alternates: {
     canonical: '/terms',
+  },
+  openGraph: {
+    title: 'Terms of Service | Pyra',
+    description: 'Terms and conditions governing the use of Pyra Keep-Alive & Uptime services.',
+    url: '/terms',
+    type: 'website',
+  },
+}
+
+const termsSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Terms of Service',
+  description: 'Terms and conditions governing use of Pyra Keep-Alive & Uptime services.',
+  url: 'https://pyra-keep-alive-web.vercel.app/terms',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://pyra-keep-alive-web.vercel.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Terms of Service',
+        item: 'https://pyra-keep-alive-web.vercel.app/terms',
+      },
+    ],
   },
 }
 
 export default function TermsPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)', padding: '48px 24px' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(termsSchema) }}
+      />
       <main style={{ maxWidth: 760, margin: '0 auto' }}>
         <div style={{ marginBottom: 32 }}>
           <Link

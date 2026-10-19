@@ -4,15 +4,50 @@ import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'How Pyra collects, encrypts, and handles your target endpoints and telemetry data.',
+  description: 'How Pyra collects, encrypts, and handles your target endpoints, secret authorization headers, and uptime telemetry data.',
   alternates: {
     canonical: '/privacy',
+  },
+  openGraph: {
+    title: 'Privacy Policy | Pyra',
+    description: 'How Pyra collects, encrypts, and handles your target endpoints and telemetry data.',
+    url: '/privacy',
+    type: 'website',
+  },
+}
+
+const privacySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Privacy Policy',
+  description: 'How Pyra collects, encrypts, and handles your target endpoints and telemetry data.',
+  url: 'https://pyra-keep-alive-web.vercel.app/privacy',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://pyra-keep-alive-web.vercel.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Privacy Policy',
+        item: 'https://pyra-keep-alive-web.vercel.app/privacy',
+      },
+    ],
   },
 }
 
 export default function PrivacyPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)', padding: '48px 24px' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(privacySchema) }}
+      />
       <main style={{ maxWidth: 760, margin: '0 auto' }}>
         <div style={{ marginBottom: 32 }}>
           <Link

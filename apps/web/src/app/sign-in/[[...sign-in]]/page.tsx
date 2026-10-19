@@ -319,6 +319,25 @@ export default async function SignInPage(props: {
                   />
                 </SignedOut>
               </ClerkLoaded>
+              <p
+                style={{
+                  marginTop: 18,
+                  fontSize: 12.5,
+                  color: 'var(--color-text-muted)',
+                  textAlign: 'center',
+                  maxWidth: 380,
+                  lineHeight: 1.5,
+                }}
+              >
+                Protected by Pyra. Review our{' '}
+                <Link href="/terms" className="link-underline" style={{ color: 'var(--color-text)', fontWeight: 500 }}>
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="link-underline" style={{ color: 'var(--color-text)', fontWeight: 500 }}>
+                  Privacy Policy
+                </Link>.
+              </p>
             </>
           ) : (
             /* Clerk not configured — setup card */
